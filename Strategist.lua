@@ -9,6 +9,7 @@ local defaults = {
 	},
 }
 
+
 local options = {
 	name = "Strategist",
 	handler = Strategist,
@@ -28,6 +29,28 @@ local options = {
 			desc = "Toggles the display of the message on the screen.",
 			get = "IsShowOnScreen",
 			set = "ToggleShowOnScreen"
+		},
+		nestedDict = {         -- Adding a nested dictionary
+			name = "Nested Dictionary", -- Add a valid string value for the name
+			type = "group",
+			args = {
+				subKey1 = {
+					type = "input",
+					name = "Sub Key 1",
+					desc = "Description for Sub Key 1",
+					usage = "<Value for Sub Key 1>", -- Example usage field
+					get = function(info) end, -- Example get function
+					set = function(info, value) end, -- Example set function
+				},
+				subKey2 = {
+					type = "toggle",
+					name = "Sub Key 2",
+					desc = "Description for Sub Key 2",
+					get = function(info) end, -- Example get function
+					set = function(info, value) end, -- Example set function
+				},
+				-- Additional key-value pairs within the nested dictionary
+			}
 		},
 	},
 }
