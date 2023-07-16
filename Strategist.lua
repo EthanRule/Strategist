@@ -13,6 +13,13 @@ local title = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
 title:SetPoint("TOP", frame, "TOP", 0, -8)
 title:SetText("Strategist")
 
+local function SaveTextToFile(text)
+    if not MyAddonData then
+        MyAddonData = {}
+    end
+    table.insert(MyAddonData, text)
+end
+
 local editBox = CreateFrame("EditBox", nil, frame)
 editBox:SetSize(200, 80) -- Adjust the width and height as needed
 editBox:SetPoint("TOPLEFT", 16, -40)
@@ -23,8 +30,11 @@ editBox:SetMaxLetters(0)           -- Remove any character limit
 editBox:SetScript("OnEnterPressed", function(self)
     self:Insert("\n")              -- Insert a new line when Enter is pressed
     self:SetTextInsets(0, 0, 0, 0) -- Reset the text insets to prevent unnecessary scrolling
-    self:ScrollToEnd()             -- Scroll to the end of the text box
+    self:SetCursorPosition(0)      -- Set the cursor position to the end of the text
     self:ClearFocus()              -- Clear the focus after pressing Enter
+
+    local text = self:GetText()    -- Get the entered text
+    SaveTextToFile(text)           -- Save the text to Saved Variables
 end)
 
 editBox:SetText("Enter text here")
@@ -40,7 +50,6 @@ local function OpenStrategistWindow()
     if not MyAddonFrame:IsShown() then
         print("show frame")
         MyAddonFrame:Show()
-        LoadAddOn("Strategist")
     end
 end
 
@@ -63,3 +72,7 @@ editBox:SetText("Enter text here")
 frame.editBox = editBox -- Store the reference to the editBox in the frame for later use
 
 frame:Show()
+print("Stored Data:")
+for i, text in ipairs(MyAddonData) do
+    print(i .. ": " .. text)
+end
