@@ -10,7 +10,7 @@ frame:SetScript("OnDragStop", frame.StopMovingOrSizing)
 
 local title = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
 title:SetPoint("TOP", frame, "TOP", 0, -8)
-title:SetText("My Addon Window")
+title:SetText("Strategist")
 
 local function SaveTextToJson(text)
     local json = LibStub("json")
@@ -43,8 +43,6 @@ editBox:SetScript("OnEnterPressed", function(self)
     local text = self:GetText()    -- Get the entered text
     SaveTextToJson(text)           -- Call a function to save the text to a JSON file
 end)
-
-
 
 editBox:SetText("Enter text here")
 
