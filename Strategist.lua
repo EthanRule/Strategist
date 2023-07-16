@@ -5,10 +5,10 @@ local ACD = LibStub("AceConfigDialog-3.0")
 local defaults = {
 	profile = {
 		message = "Welcome Home!",
+		comps = { ["rmp"] = "test" },
 		showOnScreen = true,
 	},
 }
-
 
 local options = {
 	name = "Strategist",
@@ -107,3 +107,19 @@ end
 function Strategist:ToggleShowOnScreen(info, value)
 	self.db.profile.showOnScreen = value
 end
+
+function Strategist:GetCurComp(info)
+end
+
+function Strategist:SetCurComp(curComp)
+	self.db.profile.comps[curComp] = {}
+end
+
+function Strategist:GetAllMyComps(curComp)
+end
+
+function Strategist:GetAllMyCompsHaveFaced(curComp)
+	return self.db.profile.comps[curComp]
+end
+
+Strategist:SetMessage("BalanceDruid")
