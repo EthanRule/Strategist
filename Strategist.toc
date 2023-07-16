@@ -1,7 +1,9 @@
 ## Interface: 100105
-## Version: 1.0.0
 ## Title: Strategist
+## Version: 1.0.0
 ## Notes: Goated addon to track your strategies
 ## Author: Ethan Rule, Lorenzo []
+## SavedVariables: Strategist
+## DefaultState: enabled
 
 Strategist.lua
