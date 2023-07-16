@@ -1,9 +1,3 @@
-print("Hello World!")
-SLASH_TEST1 = "/strategist"
-SlashCmdList["TEST"] = function(msg)
-    print("Hello World!")
-end
-
 local frame = CreateFrame("Frame", "MyAddonFrame", UIParent, "BasicFrameTemplate")
 frame:SetSize(400, 300)
 frame:SetPoint("CENTER")
