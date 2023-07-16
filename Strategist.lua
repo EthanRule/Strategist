@@ -56,18 +56,57 @@ end
 SlashCmdList["STRATEGIST"] = OpenStrategistWindow
 
 local arenaFrame = CreateFrame("Frame")
-arenaFrame:RegisterEvent("PLAYER_ENTERING_BATTLEGROUND")
+arenaFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
+arenaFrame:RegisterEvent("ARENA_OPPONENT_UPDATE")
 
-arenaFrame:SetScript("OnEvent", function(self, event, unitID, eventType)
-    print("Entered")
-    if event == "PLAYER_ENTERING_BATTLEGROUND" then
-        print("Here")
-        OpenStrategistWindow()
+-- Table to store opponent information
+local opponents = {}
+
+-- Function to retrieve class and specialization information
+local function GetOpponentInfo(index)
+    local name, _, _, _, _, className, _, classID, specID = GetArenaOpponentInfo(index)
+    local classColor = RAID_CLASS_COLORS[className]
+
+    return {
+        name = name,
+        className = className,
+        classColor = classColor,
+        specID = specID,
+    }
+end
+
+-- Event handler function
+local function OnEvent(self, event)
+    if event == "PLAYER_ENTERING_WORLD" then
+        local inArena = select(2, IsInInstance()) == "arena"
+        -- Reset opponents table when entering a new arena
+        if inArena then
+            print("Entered arena")
+            OpenStrategistWindow()
+            wipe(opponents)
+        end
+    elseif event == "ARENA_OPPONENT_UPDATE" then
+        print("More opponent information")
+        -- Get the current number of opponents
+        local numOpponents = GetNumArenaOpponents()
+        print("num of opp" .. numOpponents)
+
+        -- Check for new opponents
+        for i = 1, numOpponents do
+            if not opponents[i] then
+                -- Retrieve information for new opponent
+                opponents[i] = GetOpponentInfo(i)
+                print(opponents[i])
+            end
+        end
     end
-end)
+end
+
+-- Register event handler function
+arenaFrame:SetScript("OnEvent", OnEvent)
 
 frame:SetScript("OnEvent", OnEvent)
-frame:RegisterEvent("PLAYER_ENTERING_BATTLEGROUND")
+frame:RegisterEvent("PLAYER_ENTERING_WORLD")
 editBox:SetText("Enter text here")
 frame.editBox = editBox -- Store the reference to the editBox in the frame for later use
 
