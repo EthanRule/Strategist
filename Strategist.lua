@@ -12,9 +12,6 @@ local title = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
 title:SetPoint("TOP", frame, "TOP", 0, -8)
 title:SetText("My Addon Window")
 
-local closeButton = CreateFrame("Button", nil, frame, "UIPanelCloseButton")
-closeButton:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -8, -8)
-
 local editBox = CreateFrame("EditBox", nil, frame)
 editBox:SetSize(200, 20)
 editBox:SetPoint("TOPLEFT", 16, -40)
