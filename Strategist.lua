@@ -22,3 +22,13 @@ local closeButton = CreateFrame("Button", nil, frame, "UIPanelCloseButton")
 closeButton:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -8, -8)
 
 frame:Show()
+SLASH_STRATEGIST1 = "/strategist"
+
+local function OpenStrategistWindow()
+    -- Your code to open the window goes here
+    if not MyAddonFrame:IsShown() then
+        MyAddonFrame:Show()
+    end
+end
+
+SlashCmdList["STRATEGIST"] = OpenStrategistWindow
