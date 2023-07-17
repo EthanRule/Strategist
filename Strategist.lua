@@ -5,7 +5,7 @@ local ACD = LibStub("AceConfigDialog-3.0")
 local defaults = {
 	profile = {
 		message = "Welcome Home!",
-		comps = { ["rmp"] = "test" },
+		comps = {},
 		showOnScreen = true,
 	},
 }
@@ -66,6 +66,7 @@ function Strategist:OnInitialize()
 
 	self:RegisterChatCommand("strat", "SlashCommand")
 	self:RegisterChatCommand("strategist", "SlashCommand")
+    Strategist:SetCurComp("BalanceDruid")
 end
 
 function Strategist:OnEnable()
@@ -113,6 +114,7 @@ end
 
 function Strategist:SetCurComp(curComp)
 	self.db.profile.comps[curComp] = {}
+    self.db:SaveData()
 end
 
 function Strategist:GetAllMyComps(curComp)
@@ -121,5 +123,3 @@ end
 function Strategist:GetAllMyCompsHaveFaced(curComp)
 	return self.db.profile.comps[curComp]
 end
-
-Strategist:SetMessage("BalanceDruid")
