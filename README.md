@@ -1,1 +1,1 @@
-# Strategist
+# Strategist: Best Addon 
