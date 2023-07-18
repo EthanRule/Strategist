@@ -1,6 +1,8 @@
 local Strategist = LibStub("AceAddon-3.0"):NewAddon("Strategist", "AceConsole-3.0", "AceEvent-3.0")
 local AC = LibStub("AceConfig-3.0")
 local ACD = LibStub("AceConfigDialog-3.0")
+local AceGUI = LibStub("AceGUI-3.0")
+
 
 local defaults = {
 	profile = {
@@ -20,8 +22,8 @@ local options = {
 			name = "Message",
 			desc = "The message to be displayed when you get home.",
 			usage = "<Your message>",
-			get = "GetMessage",
-			set = "SetMessage",
+			get = "GetCurComp",
+			set = "SetCurComp",
 		},
 		showOnScreen = {
 			type = "toggle",
@@ -66,7 +68,6 @@ function Strategist:OnInitialize()
 
 	self:RegisterChatCommand("strat", "SlashCommand")
 	self:RegisterChatCommand("strategist", "SlashCommand")
-    Strategist:SetCurComp("BalanceDruid")
 end
 
 function Strategist:OnEnable()
@@ -110,16 +111,32 @@ function Strategist:ToggleShowOnScreen(info, value)
 end
 
 function Strategist:GetCurComp(info)
+	return self.db.profile.comps
 end
 
-function Strategist:SetCurComp(curComp)
+function Strategist:SetCurComp(info, curComp)
 	self.db.profile.comps[curComp] = {}
-    self.db:SaveData()
-end
-
-function Strategist:GetAllMyComps(curComp)
+	print(curComp)
+	self.db:SaveData()
 end
 
 function Strategist:GetAllMyCompsHaveFaced(curComp)
 	return self.db.profile.comps[curComp]
 end
+
+local frame = AceGUI:Create("Frame")
+frame:SetTitle("Strategist")
+frame:SetCallback("OnClose", function(widget) AceGUI:Release(widget) end)
+frame:SetLayout("Fill")
+frame:SetWidth(400)
+frame:SetHeight(200)
+
+local editbox = AceGUI:Create("MultiLineEditBox")
+editbox:SetLabel("Insert text:")
+editbox:SetWidth(400)
+frame:AddChild(editbox)
+
+local button = AceGUI:Create("Button")
+button:SetText("Save")
+button:SetWidth(100)
+frame:AddChild(button)
