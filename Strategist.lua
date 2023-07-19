@@ -79,22 +79,27 @@ function Strategist:PLAYER_ENTERING_WORLD()
 		print("Entered arena.")
 
 		local timer = C_Timer.NewTicker(5, RefreshPartyMembers)
-		C_Timer.After(30, function() 
-			timer:Cancel() 
-
-			-- Retrieve and display class and spec for each party member
-			local temp = ""
-			for _, playerName in ipairs(partyMembers) do
-				local class, spec = GetClassAndSpec(playerName)
-				print("Class: " .. class .. " spec: " .. spec)
-				temp = temp .. class .. spec
-			end
-
-			Strategist:SetCurComp(temp)
-
-			Strategist:GUI()
-		end)
+		C_Timer.After(30, function() Strategist:OnTimerClose(timer) end)
 	end
+end
+
+function Strategist:OnTimerClose(timer)
+	print("Closing timer...")
+	timer:Cancel() 
+
+	-- Retrieve and display class and spec for each party member
+	local temp = ""
+	for _, playerName in ipairs(partyMembers) do
+		local class, spec = GetClassAndSpec(playerName)
+		print("Class: " .. class .. " spec: " .. spec)
+		temp = temp .. class .. spec
+	end
+
+	print("comp: " .. temp)
+
+	Strategist:SetCurComp(temp)
+
+	Strategist:GUI()
 end
 
 function Strategist:SlashCommand(msg)
@@ -148,6 +153,7 @@ function IsPartyMemberInTable(playerName)
 end
   
 function RefreshPartyMembers()
+	print("Refreshing...")
 	-- Get the names of arena party members dynamically
 	local numOfPartyMembers = GetNumGroupMembers()
 
