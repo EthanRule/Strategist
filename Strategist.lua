@@ -5,6 +5,7 @@ local AceGUI = LibStub("AceGUI-3.0")
 local frame 
 local editbox
 local button
+local partyMembers = {}
 
 local defaults = {
 	profile = {
@@ -18,14 +19,14 @@ local options = {
 	handler = Strategist,
 	type = "group",
 	args = {
-		msg = {
-			type = "input",
-			name = "Message",
-			desc = "The message to be displayed when you get home.",
-			usage = "<Your message>",
-			get = "GetCurComp",
-			set = "SetCurComp",
-		},
+		-- msg = {
+		-- 	type = "input",
+		-- 	name = "Message",
+		-- 	desc = "The message to be displayed when you get home.",
+		-- 	usage = "<Your message>",
+		-- 	get = "GetCurComp",
+		-- 	set = "SetCurComp",
+		-- },
 		nestedDict = {         -- Adding a nested dictionary
 			name = "Nested Dictionary", -- Add a valid string value for the name
 			type = "group",
@@ -65,11 +66,35 @@ function Strategist:OnInitialize()
 end
 
 function Strategist:OnEnable()
-	self:RegisterEvent("ZONE_CHANGED")
+	-- self:RegisterEvent("ZONE_CHANGED")
+	self:RegisterEvent("PLAYER_ENTERING_WORLD")
 end
 
-function Strategist:ZONE_CHANGED()
-	Strategist:GUI()
+function Strategist:PLAYER_ENTERING_WORLD()
+	print("Hello")
+	local _, instanceType, _, _, _, _, _, _ = GetInstanceInfo()
+	print(instanceType)
+
+	if instanceType == "arena" then
+		print("Entered arena.")
+
+		local timer = C_Timer.NewTicker(5, RefreshPartyMembers)
+		C_Timer.After(30, function() 
+			timer:Cancel() 
+
+			-- Retrieve and display class and spec for each party member
+			local temp = ""
+			for _, playerName in ipairs(partyMembers) do
+				local class, spec = GetClassAndSpec(playerName)
+				print("Class: " .. class .. " spec: " .. spec)
+				temp = temp .. class .. spec
+			end
+
+			Strategist:SetCurComp(temp)
+
+			Strategist:GUI()
+		end)
+	end
 end
 
 function Strategist:SlashCommand(msg)
@@ -94,7 +119,7 @@ function Strategist:GetCurComp(info)
 	return self.db.profile.comps
 end
 
-function Strategist:SetCurComp(info, curComp)
+function Strategist:SetCurComp(curComp)
 	self.db.profile.comps[curComp] = {}
 	print(curComp)
 	self.db:SaveData()
@@ -102,6 +127,46 @@ end
 
 function Strategist:GetAllMyCompsHaveFaced(curComp)
 	return self.db.profile.comps[curComp]
+end
+
+function GetClassAndSpec(playerName)
+	local _, class, _, _, _, _ = GetPlayerInfoByGUID(UnitGUID(playerName))
+	local specIndex = GetSpecialization(playerName)
+	local _, spec = GetSpecializationInfo(specIndex)
+	
+	return class, spec
+end
+
+function IsPartyMemberInTable(playerName)
+	for _, name in ipairs(partyMembers) do
+		if playerName == name then
+			return true
+		end
+	end
+
+	return false
+end
+  
+function RefreshPartyMembers()
+	-- Get the names of arena party members dynamically
+	local numOfPartyMembers = GetNumGroupMembers()
+
+	for i = 1, numOfPartyMembers do
+	  	local unitId = "party" .. i
+
+	  	if UnitExists(unitId) then
+			local playerName = UnitName(unitId)
+
+			if not IsPartyMemberInTable(playerName) then
+				table.insert(partyMembers, playerName)
+			end
+	  	end
+	end
+
+	if not IsPartyMemberInTable(UnitName("player")) then
+		-- Add the player
+		table.insert(partyMembers, UnitName("player"))
+	end
 end
 
 function Strategist:GUI()
