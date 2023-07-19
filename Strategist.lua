@@ -5,7 +5,6 @@ local AceGUI = LibStub("AceGUI-3.0")
 local frame
 local editbox
 local button
-local partyMembers = {}
 local unitIDs = {}
 
 local defaults = {
@@ -20,36 +19,36 @@ local options = {
 	handler = Strategist,
 	type = "group",
 	args = {
-		-- msg = {
-		-- 	type = "input",
-		-- 	name = "Message",
-		-- 	desc = "The message to be displayed when you get home.",
-		-- 	usage = "<Your message>",
-		-- 	get = "GetCurComp",
-		-- 	set = "SetCurComp",
-		-- },
-		nestedDict = {         -- Adding a nested dictionary
-			name = "Nested Dictionary", -- Add a valid string value for the name
-			type = "group",
-			args = {
-				subKey1 = {
-					type = "input",
-					name = "Sub Key 1",
-					desc = "Description for Sub Key 1",
-					usage = "<Value for Sub Key 1>", -- Example usage field
-					get = function(info) end, -- Example get function
-					set = function(info, value) end, -- Example set function
-				},
-				subKey2 = {
-					type = "toggle",
-					name = "Sub Key 2",
-					desc = "Description for Sub Key 2",
-					get = function(info) end, -- Example get function
-					set = function(info, value) end, -- Example set function
-				},
-				-- Additional key-value pairs within the nested dictionary
-			}
+		msg = {
+			type = "input",
+			name = "Message",
+			desc = "The message to be displayed when you get home.",
+			usage = "<Your message>",
+			get = "GetCurComp",
+			set = "SetCurComp",
 		},
+		-- nestedDict = {         -- Adding a nested dictionary
+		-- 	name = "Nested Dictionary", -- Add a valid string value for the name
+		-- 	type = "group",
+		-- 	args = {
+		-- 		subKey1 = {
+		-- 			type = "input",
+		-- 			name = "Sub Key 1",
+		-- 			desc = "Description for Sub Key 1",
+		-- 			usage = "<Value for Sub Key 1>", -- Example usage field
+		-- 			get = function(info) end, -- Example get function
+		-- 			set = function(info, value) end, -- Example set function
+		-- 		},
+		-- 		subKey2 = {
+		-- 			type = "toggle",
+		-- 			name = "Sub Key 2",
+		-- 			desc = "Description for Sub Key 2",
+		-- 			get = function(info) end, -- Example get function
+		-- 			set = function(info, value) end, -- Example set function
+		-- 		},
+		-- 		-- Additional key-value pairs within the nested dictionary
+		-- 	}
+		-- },
 	},
 }
 
@@ -67,21 +66,49 @@ function Strategist:OnInitialize()
 end
 
 function Strategist:OnEnable()
-	-- self:RegisterEvent("ZONE_CHANGED")
 	self:RegisterEvent("PLAYER_ENTERING_WORLD")
 end
 
 function Strategist:PLAYER_ENTERING_WORLD()
-	print("Hello")
 	local _, instanceType, _, _, _, _, _, _ = GetInstanceInfo()
-	print(instanceType)
+	print("Hello, you are in a: " .. instanceType)
 
 	if instanceType == "arena" then
-		print("Entered arena.")
-
-		local timer = C_Timer.NewTicker(5, RefreshPartyMembers)
-		C_Timer.After(30, function() Strategist:OnTimerClose(timer) end)
+		Strategist:EnteredArena()
+	elseif instanceType ~= "arena" and self.instanceType == "arena" then
+		Strategist:LeftArena()
 	end
+
+	self.instanceType = instanceType
+end
+
+function Strategist:EnteredArena()
+	print("Entered arena.")
+	self:RegisterEvent("ARENA_PREP_OPPONENT_SPECIALIZATIONS")
+	self:RegisterEvent("ARENA_OPPONENT_UPDATE")
+
+	-- Get Party Information
+	local timer = C_Timer.NewTicker(5, RefreshPartyMembers)
+	C_Timer.After(30, function() Strategist:OnTimerClose(timer) end)
+
+	local numOpps = GetNumArenaOpponentSpecs and GetNumArenaOpponentSpecs() or 0
+
+	if numOpps and numOpps > 0 then
+		Strategist:ARENA_PREP_OPPONENT_SPECIALIZATIONS()
+	end
+end
+
+function Strategist:LeftArena()
+	print("Left arena.")
+	self:UnregisterEvent("ARENA_PREP_OPPONENT_SPECIALIZATIONS")
+	self:UnregisterEvent("ARENA_OPPONENT_UPDATE")
+	Strategist:PrintUnitIdTable()
+
+	if frame then
+		frame:Hide()
+	end
+
+	unitIDs = {}
 end
 
 function Strategist:OnTimerClose(timer)
@@ -90,13 +117,22 @@ function Strategist:OnTimerClose(timer)
 
 	-- Retrieve and display class and spec for each party member
 	local temp = ""
+	local enemyTemp = ""
 	for _, unitId in ipairs(unitIDs) do
 		local class, spec = Strategist:GetClassAndSpec(unitId)
-		print("Class: " .. class .. " spec: " .. spec)
-		temp = temp .. class .. spec
+
+		if class and spec then
+			if unitId == "player" or strmatch(unitId, "party(%d+)") then
+				print("Class: " .. class .. " spec: " .. spec)
+				temp = temp .. class .. spec
+			else
+				enemyTemp = enemyTemp .. class .. spec
+			end
+		end
 	end
 
-	print("comp: " .. temp)
+	print("my comp: " .. temp)
+	print("enemy comp: " .. enemyTemp)
 
 	Strategist:SetCurComp(temp)
 
@@ -126,9 +162,13 @@ function Strategist:GetCurComp(info)
 end
 
 function Strategist:SetCurComp(curComp)
+	if curComp == nil then
+		return
+	end
+
 	self.db.profile.comps[curComp] = {}
 	print(curComp)
-	self.db:SaveData()
+	-- self.db:SaveData()
 end
 
 function Strategist:GetAllMyCompsHaveFaced(curComp)
@@ -141,39 +181,50 @@ function Strategist:GetClassAndSpec(unitId)
 	-- local specIndex = GetSpecialization(playerName)
 	-- local _, spec = GetSpecializationInfo(specIndex)
 	local iD = nil
-	if unitId == "player" then
-		iD = GetSpecialization()
-		iD = select(1, GetSpecializationInfo(iD))
-		print("the next line is player iD")
-		print(iD)
-	else
-		-- NotifyInspect(unitId) -- doesnt work with party TODO: Add delayed requests
-		-- while not CanInspect(unitId) do
 
-		-- end
-		iD = GetInspectSpecialization(unitId)
-	end
-	local class, _, classID = UnitClass(unitId)
-	print(class)
-	print(classID)
-	print(iD)
+	if unitId then
+		if unitId == "player" then
+			iD = GetSpecialization()
+			iD = select(1, GetSpecializationInfo(iD))
+			print("the next line is player iD")
+			print(iD)
+		elseif Strategist:IsValidUnit(unitId) then
+			print("Arena person")
+			iD = GetArenaOpponentSpec and GetArenaOpponentSpec(tonumber(unitId))
 
-	-- Get the specialization name
-	local iD, specName, description, icon, background, role, class = GetSpecializationInfoByID(iD)
-	print(class)
-	print(specName)
+			if iD then
+				print("Arena id: " .. iD)
+			end
+		elseif strmatch(unitId, "party(%d+)") then
+			-- NotifyInspect(unitId) -- doesnt work with party TODO: Add delayed requests
+			-- while not CanInspect(unitId) do
 
-	return class, specName
-end
+			-- end
+			print("Party person")
+			iD = GetInspectSpecialization(unitId)
+		end
 
-function Strategist:IsPartyMemberInTable(playerName)
-	for _, name in ipairs(partyMembers) do
-		if playerName == name then
-			return true
+		-- local class, _, classID = UnitClass(unitId)
+		-- Get the specialization name
+		-- print(iD)
+		if iD then
+			local specID, specName, description, icon, background, role, class = GetSpecializationInfoByID(iD)
+
+			return class, specName
 		end
 	end
 
-	return false
+	return nil, nil
+end
+
+function Strategist:PrintUnitIdTable()
+	print("Printing IDs")
+	
+	for _, Id in ipairs(unitIDs) do
+		print(Id)
+	end
+
+	print("Printing IDs END")
 end
 
 function Strategist:IsUnitIdInTable(unitId)
@@ -186,36 +237,63 @@ function Strategist:IsUnitIdInTable(unitId)
 	return false
 end
 
+function Strategist:ARENA_OPPONENT_UPDATE(event, unit, type)
+	if not Strategist:IsValidUnit(unit) then
+		return
+	end
+	print("Opponent updated")
+
+	local id = string.match(unit, "arena(%d)")
+	local specID = GetArenaOpponentSpec and GetArenaOpponentSpec(tonumber(id))
+
+	if specID and specID > 0 and not Strategist:IsUnitIdInTable(unit) then
+		table.insert(unitIDs, unit)
+	end	
+end
+
+function Strategist:ARENA_PREP_OPPONENT_SPECIALIZATIONS()
+	print("Prepping opponent information")
+	for i = 1, GetNumArenaOpponentSpecs and GetNumArenaOpponentSpecs() or 0 do
+		local unit = "arena"..i
+		local specID = GetArenaOpponentSpec and GetArenaOpponentSpec(i)
+
+		if specID and specID > 0 and not Strategist:IsUnitIdInTable(unit) then
+			table.insert(unitIDs, unit)
+		end
+	end
+end
+
 function RefreshPartyMembers()
 	print("Refreshing...")
-	-- Get the names of arena party members dynamically
+	local _, _, _, _, maxPlayers, _, _, instanceMapID = GetInstanceInfo()
+	
 	local numOfPartyMembers = GetNumGroupMembers()
 	print(numOfPartyMembers)
+	print("Max number of players allowed " .. maxPlayers)
 
 	for i = 1, numOfPartyMembers do
 		local unitId = "party" .. i
 
 		if UnitExists(unitId) then
-			local playerName = UnitName(unitId)
-
-			if not Strategist:IsPartyMemberInTable(playerName) then
-				table.insert(partyMembers, playerName)
-			end
 			if not Strategist:IsUnitIdInTable(unitId) then
 				table.insert(unitIDs, unitId)
 				print(unitId)
 			end
 		end
 	end
-	local name, _ = UnitName("player")
-	if not Strategist:IsPartyMemberInTable(name) then
-		-- Add the player
-		print(name)
-		table.insert(partyMembers, name)
-	end
+
 	if not Strategist:IsUnitIdInTable("player") then
 		table.insert(unitIDs, "player")
 	end
+end
+
+function Strategist:IsValidUnit(unit)
+	if not unit then
+		return
+	end
+
+	local unitID = strmatch(unit, "arena(%d+)")
+	return unitID and tonumber(unitID) <= 5
 end
 
 function Strategist:GUI()
