@@ -2,10 +2,11 @@ local Strategist = LibStub("AceAddon-3.0"):NewAddon("Strategist", "AceConsole-3.
 local AC = LibStub("AceConfig-3.0")
 local ACD = LibStub("AceConfigDialog-3.0")
 local AceGUI = LibStub("AceGUI-3.0")
-local frame 
+local frame
 local editbox
 local button
 local partyMembers = {}
+local unitIDs = {}
 
 local defaults = {
 	profile = {
@@ -85,12 +86,12 @@ end
 
 function Strategist:OnTimerClose(timer)
 	print("Closing timer...")
-	timer:Cancel() 
+	timer:Cancel()
 
 	-- Retrieve and display class and spec for each party member
 	local temp = ""
-	for _, playerName in ipairs(partyMembers) do
-		local class, spec = GetClassAndSpec(playerName)
+	for _, unitId in ipairs(unitIDs) do
+		local class, spec = Strategist:GetClassAndSpec(unitId)
 		print("Class: " .. class .. " spec: " .. spec)
 		temp = temp .. class .. spec
 	end
@@ -134,15 +135,38 @@ function Strategist:GetAllMyCompsHaveFaced(curComp)
 	return self.db.profile.comps[curComp]
 end
 
-function GetClassAndSpec(playerName)
-	local _, class, _, _, _, _ = GetPlayerInfoByGUID(UnitGUID(playerName))
-	local specIndex = GetSpecialization(playerName)
-	local _, spec = GetSpecializationInfo(specIndex)
-	
-	return class, spec
+function Strategist:GetClassAndSpec(unitId)
+	-- local _, class, _, _, _, _ = GetPlayerInfoByGUID(UnitGUID(playerName))
+	-- print(class)
+	-- local specIndex = GetSpecialization(playerName)
+	-- local _, spec = GetSpecializationInfo(specIndex)
+	local iD = nil
+	if unitId == "player" then
+		iD = GetSpecialization()
+		iD = select(1, GetSpecializationInfo(iD))
+		print("the next line is player iD")
+		print(iD)
+	else
+		-- NotifyInspect(unitId) -- doesnt work with party TODO: Add delayed requests
+		-- while not CanInspect(unitId) do
+
+		-- end
+		iD = GetInspectSpecialization(unitId)
+	end
+	local class, _, classID = UnitClass(unitId)
+	print(class)
+	print(classID)
+	print(iD)
+
+	-- Get the specialization name
+	local iD, specName, description, icon, background, role, class = GetSpecializationInfoByID(iD)
+	print(class)
+	print(specName)
+
+	return class, specName
 end
 
-function IsPartyMemberInTable(playerName)
+function Strategist:IsPartyMemberInTable(playerName)
 	for _, name in ipairs(partyMembers) do
 		if playerName == name then
 			return true
@@ -151,27 +175,46 @@ function IsPartyMemberInTable(playerName)
 
 	return false
 end
-  
+
+function Strategist:IsUnitIdInTable(unitId)
+	for _, Id in ipairs(unitIDs) do
+		if unitId == Id then
+			return true
+		end
+	end
+
+	return false
+end
+
 function RefreshPartyMembers()
 	print("Refreshing...")
 	-- Get the names of arena party members dynamically
 	local numOfPartyMembers = GetNumGroupMembers()
+	print(numOfPartyMembers)
 
 	for i = 1, numOfPartyMembers do
-	  	local unitId = "party" .. i
+		local unitId = "party" .. i
 
-	  	if UnitExists(unitId) then
+		if UnitExists(unitId) then
 			local playerName = UnitName(unitId)
 
-			if not IsPartyMemberInTable(playerName) then
+			if not Strategist:IsPartyMemberInTable(playerName) then
 				table.insert(partyMembers, playerName)
 			end
-	  	end
+			if not Strategist:IsUnitIdInTable(unitId) then
+				table.insert(unitIDs, unitId)
+				print(unitId)
+			end
+		end
 	end
-
-	if not IsPartyMemberInTable(UnitName("player")) then
+	local name, _ = UnitName("player")
+	if not Strategist:IsPartyMemberInTable(name) then
 		-- Add the player
-		table.insert(partyMembers, UnitName("player"))
+		print(name)
+		table.insert(partyMembers, name)
+	end
+	if not Strategist:IsUnitIdInTable("player") then
+		table.insert(unitIDs, "player")
 	end
 end
 
@@ -187,8 +230,8 @@ function Strategist:GUI()
 			print("Creating frame!")
 			frame = AceGUI:Create("Frame")
 			frame:SetTitle("Strategist")
-			frame:SetCallback("OnClose", function(widget) 
-				-- AceGUI:Release(widget) 
+			frame:SetCallback("OnClose", function(widget)
+				-- AceGUI:Release(widget)
 				widget:Hide() -- Hide the frame instead of releasing it
 			end)
 			frame:SetLayout("Fill")
@@ -204,7 +247,7 @@ function Strategist:GUI()
 			button:SetText("Save")
 			button:SetWidth(100)
 			frame:AddChild(button)
-		else 
+		else
 			print("Showing frame!")
 			frame:Show()
 		end
