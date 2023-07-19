@@ -2,13 +2,14 @@ local Strategist = LibStub("AceAddon-3.0"):NewAddon("Strategist", "AceConsole-3.
 local AC = LibStub("AceConfig-3.0")
 local ACD = LibStub("AceConfigDialog-3.0")
 local AceGUI = LibStub("AceGUI-3.0")
-
+local frame 
+local editbox
+local button
 
 local defaults = {
 	profile = {
 		message = "Welcome Home!",
 		comps = {},
-		showOnScreen = true,
 	},
 }
 
@@ -24,13 +25,6 @@ local options = {
 			usage = "<Your message>",
 			get = "GetCurComp",
 			set = "SetCurComp",
-		},
-		showOnScreen = {
-			type = "toggle",
-			name = "Show on Screen",
-			desc = "Toggles the display of the message on the screen.",
-			get = "IsShowOnScreen",
-			set = "ToggleShowOnScreen"
 		},
 		nestedDict = {         -- Adding a nested dictionary
 			name = "Nested Dictionary", -- Add a valid string value for the name
@@ -75,13 +69,7 @@ function Strategist:OnEnable()
 end
 
 function Strategist:ZONE_CHANGED()
-	if GetBindLocation() == GetSubZoneText() then
-		if self.db.profile.showOnScreen then
-			UIErrorsFrame:AddMessage(self.db.profile.message, 1, 1, 1)
-		else
-			self:Print(self.db.profile.message)
-		end
-	end
+	Strategist:GUI()
 end
 
 function Strategist:SlashCommand(msg)
@@ -102,14 +90,6 @@ function Strategist:SetMessage(info, value)
 	self.db.profile.message = value
 end
 
-function Strategist:IsShowOnScreen(info)
-	return self.db.profile.showOnScreen
-end
-
-function Strategist:ToggleShowOnScreen(info, value)
-	self.db.profile.showOnScreen = value
-end
-
 function Strategist:GetCurComp(info)
 	return self.db.profile.comps
 end
@@ -124,19 +104,38 @@ function Strategist:GetAllMyCompsHaveFaced(curComp)
 	return self.db.profile.comps[curComp]
 end
 
-local frame = AceGUI:Create("Frame")
-frame:SetTitle("Strategist")
-frame:SetCallback("OnClose", function(widget) AceGUI:Release(widget) end)
-frame:SetLayout("Fill")
-frame:SetWidth(400)
-frame:SetHeight(200)
+function Strategist:GUI()
+	print("Entered new zone!")
 
-local editbox = AceGUI:Create("MultiLineEditBox")
-editbox:SetLabel("Insert text:")
-editbox:SetWidth(400)
-frame:AddChild(editbox)
+	if frame ~= nil and frame:IsShown() then
+		print("Frame is already visible!")
+	else
+		print("Frame is not visible!")
 
-local button = AceGUI:Create("Button")
-button:SetText("Save")
-button:SetWidth(100)
-frame:AddChild(button)
+		if frame == nil then
+			print("Creating frame!")
+			frame = AceGUI:Create("Frame")
+			frame:SetTitle("Strategist")
+			frame:SetCallback("OnClose", function(widget) 
+				-- AceGUI:Release(widget) 
+				widget:Hide() -- Hide the frame instead of releasing it
+			end)
+			frame:SetLayout("Fill")
+			frame:SetWidth(400)
+			frame:SetHeight(200)
+
+			editbox = AceGUI:Create("MultiLineEditBox")
+			editbox:SetLabel("Insert text:")
+			editbox:SetWidth(400)
+			frame:AddChild(editbox)
+
+			button = AceGUI:Create("Button")
+			button:SetText("Save")
+			button:SetWidth(100)
+			frame:AddChild(button)
+		else 
+			print("Showing frame!")
+			frame:Show()
+		end
+	end
+end
