@@ -67,6 +67,7 @@ end
 
 function Strategist:OnEnable()
 	self:RegisterEvent("PLAYER_ENTERING_WORLD")
+	self:RegisterEvent("GROUP_ROSTER_UPDATE")
 end
 
 function Strategist:PLAYER_ENTERING_WORLD()
@@ -98,77 +99,26 @@ function Strategist:EnteredArena()
 	end
 end
 
-function Strategist:LeftArena()
-	print("Left arena.")
-	self:UnregisterEvent("ARENA_PREP_OPPONENT_SPECIALIZATIONS")
-	self:UnregisterEvent("ARENA_OPPONENT_UPDATE")
-	Strategist:PrintUnitIdTable()
-
-	if frame then
-		frame:Hide()
-	end
-
-	unitIDs = {}
-end
-
-function Strategist:OnTimerClose(timer)
-	print("Closing timer...")
-	timer:Cancel()
-
-	-- Retrieve and display class and spec for each party member
-	local temp = ""
-	local enemyTemp = ""
-	for _, unitId in ipairs(unitIDs) do
-		local class, spec = Strategist:GetClassAndSpec(unitId)
-
-		if class and spec then
-			if unitId == "player" or strmatch(unitId, "party(%d+)") then
-				print("Class: " .. class .. " spec: " .. spec)
-				temp = temp .. class .. spec
-			else
-				enemyTemp = enemyTemp .. class .. spec
+function Strategist:GROUP_ROSTER_UPDATE()
+	-- Check the current group composition
+	local numGroupMembers = GetNumGroupMembers()
+	if numGroupMembers > 0 then
+		print("roster" .. numGroupMembers)
+		for i = 1, numGroupMembers do
+			local unitId = "party" .. i
+			if UnitExists(unitId) and not Strategist:IsUnitIdInTable(unitId) then
+				table.insert(unitIDs, unitId)
+				local class, spec = Strategist:GetClassAndSpec(unitId)
+				print(class)
+				print(spec)
+				if class and spec then
+					print(class .. " - " .. spec)
+				end
 			end
 		end
-	end
-
-	print("my comp: " .. temp)
-	print("enemy comp: " .. enemyTemp)
-
-	Strategist:SetCurComp(temp)
-
-	Strategist:GUI()
-end
-
-function Strategist:SlashCommand(msg)
-	if not msg or msg:trim() == "" then
-		-- https://github.com/Stanzilla/WoWUIBugs/issues/89
-		InterfaceOptionsFrame_OpenToCategory(self.optionsFrame)
-		InterfaceOptionsFrame_OpenToCategory(self.optionsFrame)
 	else
-		self:Print("hello there!")
+		print("You are not in a group.")
 	end
-end
-
-function Strategist:GetMessage(info)
-	return self.db.profile.message
-end
-
-function Strategist:SetMessage(info, value)
-	self.db.profile.message = value
-end
-
-function Strategist:GetCurComp(info)
-	return self.db.profile.comps
-end
-
-function Strategist:SetCurComp(curComp)
-	if curComp == nil then
-		return
-	end
-
-	self.db.profile.comps[curComp] = {}
-	print(curComp)
-	-- self.db:SaveData()
 end
 
 function Strategist:GetAllMyCompsHaveFaced(curComp)
@@ -181,6 +131,7 @@ function Strategist:GetClassAndSpec(unitId)
 	-- local specIndex = GetSpecialization(playerName)
 	-- local _, spec = GetSpecializationInfo(specIndex)
 	local iD = nil
+	print("GetClassAndSpec unitId" .. unitId)
 
 	if unitId then
 		if unitId == "player" then
@@ -196,13 +147,13 @@ function Strategist:GetClassAndSpec(unitId)
 			-- 		print("Arena id: " .. iD)
 			-- 	end
 		elseif strmatch(unitId, "party(%d+)") then
-			NotifyInspect(unitId) -- Initiate the inspection
-			iD = TryInspectParty(unitId)
+			print("GetClassAndSpec party person")
+			iD = GetInspectSpecialization(unitId)
 		end
 
 		-- local class, _, classID = UnitClass(unitId)
 		-- Get the specialization name
-		-- print(iD)
+		print(iD)
 		if iD then
 			local specID, specName, description, icon, background, role, class = GetSpecializationInfoByID(iD)
 
@@ -214,25 +165,30 @@ function Strategist:GetClassAndSpec(unitId)
 end
 
 function TryInspectParty(unitId)
-	local iD 
+	local iD
 	local timer = C_Timer.NewTicker(1, CheckingInspect)
 
 	function CheckingInspect()
-		iD = CheckingInspectCallBack(timer, unitId)
+		iD = CheckingInspectCallBack(unitId)
 	end
 
+	if iD then
+		timer:Cancel()
+	end
 	return iD
 end
 
-function CheckingInspectCallBack(timer, unitId)
+function CheckingInspectCallBack(unitId)
 	if CanInspect(unitId) then
 		print("Party person")
+
 		local iD = GetInspectSpecialization(unitId)
-		timer:Cancel()
+		print("the next line is party iD")
+		print(iD)
 
 		return iD
 	end
-	
+
 	return nil
 end
 
@@ -313,6 +269,81 @@ function Strategist:IsValidUnit(unit)
 
 	local unitID = strmatch(unit, "arena(%d+)")
 	return unitID and tonumber(unitID) <= 5
+end
+
+function Strategist:LeftArena()
+	print("Left arena.")
+	self:UnregisterEvent("ARENA_PREP_OPPONENT_SPECIALIZATIONS")
+	self:UnregisterEvent("ARENA_OPPONENT_UPDATE")
+	Strategist:PrintUnitIdTable()
+
+	if frame then
+		frame:Hide()
+	end
+
+	unitIDs = {}
+end
+
+function Strategist:OnTimerClose(timer)
+	print("Closing timer...")
+	timer:Cancel()
+
+	-- Retrieve and display class and spec for each party member
+	local temp = ""
+	local enemyTemp = ""
+	for _, unitId in ipairs(unitIDs) do
+		local class, spec = Strategist:GetClassAndSpec(unitId)
+
+		if class and spec then
+			if unitId == "player" or strmatch(unitId, "party(%d+)") then
+				print("Class: " .. class .. " spec: " .. spec)
+				temp = temp .. class .. spec
+			else
+				enemyTemp = enemyTemp .. class .. spec
+			end
+		end
+	end
+
+	print("my comp: " .. temp)
+	print("enemy comp: " .. enemyTemp)
+
+
+
+	Strategist:SetCurComp(temp)
+
+	Strategist:GUI()
+end
+
+function Strategist:SlashCommand(msg)
+	if not msg or msg:trim() == "" then
+		-- https://github.com/Stanzilla/WoWUIBugs/issues/89
+		InterfaceOptionsFrame_OpenToCategory(self.optionsFrame)
+		InterfaceOptionsFrame_OpenToCategory(self.optionsFrame)
+	else
+		self:Print("hello there!")
+	end
+end
+
+function Strategist:GetMessage(info)
+	return self.db.profile.message
+end
+
+function Strategist:SetMessage(info, value)
+	self.db.profile.message = value
+end
+
+function Strategist:GetCurComp(info)
+	return self.db.profile.comps
+end
+
+function Strategist:SetCurComp(curComp)
+	if curComp == nil then
+		return
+	end
+
+	self.db.profile.comps[curComp] = {}
+	print(curComp)
+	-- self.db:SaveData()
 end
 
 function Strategist:GUI()
