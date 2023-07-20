@@ -8,6 +8,8 @@ local button
 local unitIDs = {}
 local pendingInspections = {}
 local playerComp = {}
+local enemyUnitIDs = {}
+local enemyComp = {}
 
 
 
@@ -71,13 +73,11 @@ end
 
 function Strategist:OnEnable()
 	self:RegisterEvent("PLAYER_ENTERING_WORLD")
-	-- self:RegisterEvent("GROUP_ROSTER_UPDATE", "EnqueuePlayers") -- add someone to the queue with this event, check if they already exist too
-	-- self:RegisterEvent("INSPECT_READY")
 end
 
 function Strategist:EnqueuePlayers()
 	-- Enter Self into table
-	if not Strategist:IsUnitIdInTable("player") then
+	if not Strategist:IsInTable("player", unitIDs) then
 		table.insert(unitIDs, "player")
 	end
 
@@ -86,7 +86,7 @@ function Strategist:EnqueuePlayers()
 	if numGroupMembers > 0 then
 		for i = 1, numGroupMembers do
 			local unitId = "party" .. i
-			if UnitExists(unitId) and not Strategist:IsUnitIdInTable(unitId) then
+			if UnitExists(unitId) and not Strategist:IsInTable(unitId, unitIDs) then
 				table.insert(unitIDs, unitId)
 
 				-- Add the player to the pendingInspections table with their GUID
@@ -108,14 +108,13 @@ function Strategist:INSPECT_READY(event, guid)
 		pendingInspections[guid] = nil
 
 		local class, spec = Strategist:GetClassAndSpec(playerUnitId)
-		if class and spec and not Strategist:IsCompInTable(class .. spec) then
+		if class and spec and not Strategist:IsInTable(class .. spec, playerComp) then
 			-- Do something with the class and spec information (e.g., store it, print it, etc.)
 			print(playerUnitId .. ": " .. class .. " " .. spec)
 			table.insert(playerComp, class .. spec)
 		else
 			print("Error: Failed to get class and spec")
 		end
-
 	end
 end
 
@@ -133,9 +132,7 @@ end
 
 function Strategist:EnteredArena()
 	self:RegisterEvent("ARENA_PREP_OPPONENT_SPECIALIZATIONS")
-	self:RegisterEvent("ARENA_OPPONENT_UPDATE")
-
-	self:RegisterEvent("GROUP_ROSTER_UPDATE", "EnqueuePlayers") -- add someone to the queue with this event, check if they already exist too
+	self:RegisterEvent("GROUP_ROSTER_UPDATE", "EnqueuePlayers")
 	self:RegisterEvent("INSPECT_READY")
 
 	print("Entered Arena")
@@ -160,8 +157,6 @@ function Strategist:GetAllMyCompsHaveFaced(curComp)
 	return self.db.profile.comps[curComp]
 end
 
--- need events to trigger queue pops
-
 function Strategist:GetClassAndSpec(unitId)
 	local iD = nil
 
@@ -169,13 +164,13 @@ function Strategist:GetClassAndSpec(unitId)
 		if unitId == "player" then
 			iD = GetSpecialization()
 			iD = select(1, GetSpecializationInfo(iD))
-			-- elseif Strategist:IsValidUnit(unitId) then                              //OPONENTS
-			-- 	print("Arena person")
-			-- 	iD = GetArenaOpponentSpec and GetArenaOpponentSpec(tonumber(unitId))
+		elseif Strategist:IsValidUnit(unitId) then
+			print("Arena person")
+			iD = GetArenaOpponentSpec and GetArenaOpponentSpec(tonumber(unitId))
 
-			-- 	if iD then
-			-- 		print("Arena id: " .. iD)
-			-- 	end
+			if iD then
+				print("Arena id: " .. iD)
+			end
 		elseif strmatch(unitId, "party(%d+)") then
 			iD = GetInspectSpecialization(unitId)
 		end
@@ -190,57 +185,24 @@ function Strategist:GetClassAndSpec(unitId)
 	return nil, nil
 end
 
-function Strategist:PrintUnitIdTable()
-	print("Printing IDs")
+function Strategist:PrintTable(table)
+	print("Printing Table START:")
 
-	for _, Id in ipairs(unitIDs) do
+	for _, Id in ipairs(table) do
 		print(Id)
 	end
 
-	print("Printing IDs END")
+	print("Printing Table END")
 end
 
-function Strategist:PrintCompTable()
-	print("Printing Comp")
-
-	for _, Id in ipairs(playerComp) do
-		print(Id)
-	end
-
-	print("Printing Comp END")
-end
-
-function Strategist:IsUnitIdInTable(unitId)
-	for _, Id in ipairs(unitIDs) do
-		if unitId == Id then
+function Strategist:IsInTable(item, table)
+	for _, Id in ipairs(table) do
+		if item == Id then
 			return true
 		end
 	end
 
 	return false
-end
-
-function Strategist:IsCompInTable(classAndSpec)
-	for _, Id in ipairs(playerComp) do
-		if classAndSpec == Id then
-			return true
-		end
-	end
-
-	return false
-end
-
-function Strategist:ARENA_OPPONENT_UPDATE(event, unit, type)
-	if not Strategist:IsValidUnit(unit) then
-		return
-	end
-
-	local id = string.match(unit, "arena(%d)")
-	local specID = GetArenaOpponentSpec and GetArenaOpponentSpec(tonumber(id))
-
-	if specID and specID > 0 and not Strategist:IsUnitIdInTable(unit) then
-		table.insert(unitIDs, unit)
-	end
 end
 
 function Strategist:ARENA_PREP_OPPONENT_SPECIALIZATIONS()
@@ -249,8 +211,12 @@ function Strategist:ARENA_PREP_OPPONENT_SPECIALIZATIONS()
 		local unit = "arena" .. i
 		local specID = GetArenaOpponentSpec and GetArenaOpponentSpec(i)
 
-		if specID and specID > 0 and not Strategist:IsUnitIdInTable(unit) then
-			table.insert(unitIDs, unit)
+		if specID and specID > 0 and not Strategist:IsInTable(unit, enemyUnitIDs) then
+			print("here")
+			local iD, specName, description, icon, background, role, class = GetSpecializationInfoByID(specID)
+			print(specName)
+			print(class)
+			table.insert(enemyComp, class .. specName)
 		end
 	end
 end
@@ -267,15 +233,18 @@ end
 function Strategist:LeftArena()
 	print("Left arena.")
 	self:UnregisterEvent("ARENA_PREP_OPPONENT_SPECIALIZATIONS")
-	self:UnregisterEvent("ARENA_OPPONENT_UPDATE")
 	self:UnregisterEvent("GROUP_ROSTER_UPDATE", "EnqueuePlayers") -- add someone to the queue with this event, check if they already exist too
 	self:UnregisterEvent("INSPECT_READY")
 
 	if frame then
 		frame:Hide()
 	end
-	Strategist:PrintUnitIdTable()
-	Strategist:PrintCompTable()
+	print("unitIDs")
+	Strategist:PrintTable(unitIDs)
+	print("playerComp")
+	Strategist:PrintTable(playerComp)
+	print("enemyComp")
+	Strategist:PrintTable(enemyComp)
 
 	unitIDs = {}
 	playerComp = {}
