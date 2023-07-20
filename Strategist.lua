@@ -7,6 +7,7 @@ local editbox
 local button
 local unitIDs = {}
 local pendingInspections = {}
+local playerComp = {}
 
 
 local defaults = {
@@ -69,8 +70,8 @@ end
 
 function Strategist:OnEnable()
 	self:RegisterEvent("PLAYER_ENTERING_WORLD")
-	self:RegisterEvent("GROUP_ROSTER_UPDATE", "EnqueuePlayers") -- add someone to the queue with this event, check if they already exist too
-	self:RegisterEvent("INSPECT_READY")
+	-- self:RegisterEvent("GROUP_ROSTER_UPDATE", "EnqueuePlayers") -- add someone to the queue with this event, check if they already exist too
+	-- self:RegisterEvent("INSPECT_READY")
 end
 
 function Strategist:EnqueuePlayers()
@@ -165,6 +166,9 @@ end
 function Strategist:EnteredArena()
 	self:RegisterEvent("ARENA_PREP_OPPONENT_SPECIALIZATIONS")
 	self:RegisterEvent("ARENA_OPPONENT_UPDATE")
+
+	self:RegisterEvent("GROUP_ROSTER_UPDATE", "EnqueuePlayers") -- add someone to the queue with this event, check if they already exist too
+	self:RegisterEvent("INSPECT_READY")
 
 	print("Entered Arena")
 
@@ -322,6 +326,8 @@ function Strategist:LeftArena()
 	print("Left arena.")
 	self:UnregisterEvent("ARENA_PREP_OPPONENT_SPECIALIZATIONS")
 	self:UnregisterEvent("ARENA_OPPONENT_UPDATE")
+	self:UnregisterEvent("GROUP_ROSTER_UPDATE", "EnqueuePlayers") -- add someone to the queue with this event, check if they already exist too
+	self:UnregisterEvent("INSPECT_READY")
 
 	Strategist:PrintUnitIdTable()
 
