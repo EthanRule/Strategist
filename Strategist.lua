@@ -164,13 +164,6 @@ function Strategist:GetClassAndSpec(unitId)
 		if unitId == "player" then
 			iD = GetSpecialization()
 			iD = select(1, GetSpecializationInfo(iD))
-		elseif Strategist:IsValidUnit(unitId) then
-			print("Arena person")
-			iD = GetArenaOpponentSpec and GetArenaOpponentSpec(tonumber(unitId))
-
-			if iD then
-				print("Arena id: " .. iD)
-			end
 		elseif strmatch(unitId, "party(%d+)") then
 			iD = GetInspectSpecialization(unitId)
 		end
@@ -195,7 +188,7 @@ function Strategist:PrintTable(table)
 	print("Printing Table END")
 end
 
-function Strategist:IsInTable(item, table)
+function Strategist:IsInTable(item, table) -- reverse parameters
 	for _, Id in ipairs(table) do
 		if item == Id then
 			return true
@@ -211,12 +204,13 @@ function Strategist:ARENA_PREP_OPPONENT_SPECIALIZATIONS()
 		local unit = "arena" .. i
 		local specID = GetArenaOpponentSpec and GetArenaOpponentSpec(i)
 
-		if specID and specID > 0 and not Strategist:IsInTable(unit, enemyUnitIDs) then
+		if specID and specID > 0 then
 			print("here")
 			local iD, specName, description, icon, background, role, class = GetSpecializationInfoByID(specID)
-			print(specName)
-			print(class)
-			table.insert(enemyComp, class .. specName)
+			if class and specName and not Strategist:IsInTable(class .. specName, enemyComp) then
+				print(class .. specName)
+				table.insert(enemyComp, class .. specName)
+			end
 		end
 	end
 end
@@ -239,8 +233,6 @@ function Strategist:LeftArena()
 	if frame then
 		frame:Hide()
 	end
-	print("unitIDs")
-	Strategist:PrintTable(unitIDs)
 	print("playerComp")
 	Strategist:PrintTable(playerComp)
 	print("enemyComp")
@@ -248,6 +240,7 @@ function Strategist:LeftArena()
 
 	unitIDs = {}
 	playerComp = {}
+	enemyComp = {}
 end
 
 function Strategist:SlashCommand(msg)
