@@ -68,7 +68,7 @@ end
 
 function Strategist:OnEnable()
 	self:RegisterEvent("PLAYER_ENTERING_WORLD")
-	self:RegisterEvent("GROUP_ROSTER_UPDATE")
+	-- self:RegisterEvent("GROUP_ROSTER_UPDATE")
 end
 
 function Strategist:PLAYER_ENTERING_WORLD()
@@ -89,8 +89,8 @@ function Strategist:EnteredArena()
 	self:RegisterEvent("ARENA_OPPONENT_UPDATE")
 
 	-- Get Party Information
-	-- local timer = C_Timer.NewTicker(5, RefreshPartyMembers)                //THIS IS GOOD CODE
-	-- C_Timer.After(30, function() Strategist:OnTimerClose(timer) end)
+	local timer = C_Timer.NewTicker(5, RefreshPartyMembers)
+	C_Timer.After(30, function() Strategist:OnTimerClose(timer) end)
 
 	local numOpps = GetNumArenaOpponentSpecs and GetNumArenaOpponentSpecs() or 0
 
@@ -99,38 +99,33 @@ function Strategist:EnteredArena()
 	end
 end
 
-function Strategist:GROUP_ROSTER_UPDATE()
-	local numGroupMembers = GetNumGroupMembers()
-	if numGroupMembers > 0 then
-		for i = 1, numGroupMembers do
-			local unitId = "party" .. i
-			if UnitExists(unitId) and not Strategist:IsUnitIdInTable(unitId) then
-				local class, spec = Strategist:GetClassAndSpec(unitId)
-				print(class)
-				print(spec)
-				if class and spec then
-					table.insert(unitIDs, unitId)
-					print(class .. " - " .. spec)
-				end
-			end
-		end
-	else
-		print("You are not in a group.")
-	end
-end
+-- function Strategist:GROUP_ROSTER_UPDATE()
+-- 	local numGroupMembers = GetNumGroupMembers()
+-- 	if numGroupMembers > 0 then
+-- 		for i = 1, numGroupMembers do
+-- 			local unitId = "party" .. i
+-- 			if UnitExists(unitId) and not Strategist:IsUnitIdInTable(unitId) then
+-- 				local class, spec = Strategist:GetClassAndSpec(unitId)
+-- 				print(class)
+-- 				print(spec)
+-- 				if class and spec then
+-- 					table.insert(unitIDs, unitId)
+-- 					print(class .. " - " .. spec)
+-- 				end
+-- 			end
+-- 		end
+-- 	else
+-- 		print("You are not in a group.")
+-- 	end
+-- end
 
 function Strategist:GetAllMyCompsHaveFaced(curComp)
 	return self.db.profile.comps[curComp]
 end
 
-function Sleep(s)
-	local timer = C_Timer.NewTicker(1, function() print("ticking") end)
-	C_Timer.After(s, function() timer:Cancel() end)
-end
+-- need events to trigger queue pops
 
 function Strategist:GetClassAndSpec(unitId)
-	Sleep(5)
-
 	local iD = nil
 	print("GetClassAndSpec unitId" .. unitId)
 
