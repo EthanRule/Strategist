@@ -10,6 +10,7 @@ local pendingInspections = {}
 local playerComp = {}
 
 
+
 local defaults = {
 	profile = {
 		message = "Welcome Home!",
@@ -142,6 +143,7 @@ function Strategist:INSPECT_READY(event, guid)
 		if class and spec then
 			-- Do something with the class and spec information (e.g., store it, print it, etc.)
 			print(playerUnitId .. ": " .. class .. " " .. spec)
+			table.insert(playerComp, class .. spec)
 		else
 			print("Error: Failed to get class and spec")
 		end
@@ -176,12 +178,10 @@ function Strategist:EnteredArena()
 	if class and spec then
 		-- Do something with the class and spec information (e.g., store it, print it, etc.)
 		print("player" .. ": " .. class .. " " .. spec)
+		table.insert(playerComp, class .. spec)
 	else
 		print("Error: Failed to get player class and spec")
 	end
-	-- Get Party Information
-	-- local timer = C_Timer.NewTicker(5, RefreshPartyMembers)
-	-- C_Timer.After(30, function() Strategist:OnTimerClose(timer) end)
 
 	local numOpps = GetNumArenaOpponentSpecs and GetNumArenaOpponentSpecs() or 0
 
@@ -189,26 +189,6 @@ function Strategist:EnteredArena()
 		Strategist:ARENA_PREP_OPPONENT_SPECIALIZATIONS()
 	end
 end
-
--- function Strategist:GROUP_ROSTER_UPDATE()
--- 	local numGroupMembers = GetNumGroupMembers()
--- 	if numGroupMembers > 0 then
--- 		for i = 1, numGroupMembers do
--- 			local unitId = "party" .. i
--- 			if UnitExists(unitId) and not Strategist:IsUnitIdInTable(unitId) then
--- 				local class, spec = Strategist:GetClassAndSpec(unitId)
--- 				print(class)
--- 				print(spec)
--- 				if class and spec then
--- 					table.insert(unitIDs, unitId)
--- 					print(class .. " - " .. spec)
--- 				end
--- 			end
--- 		end
--- 	else
--- 		print("You are not in a group.")
--- 	end
--- end
 
 function Strategist:GetAllMyCompsHaveFaced(curComp)
 	return self.db.profile.comps[curComp]
@@ -254,6 +234,16 @@ function Strategist:PrintUnitIdTable()
 	print("Printing IDs END")
 end
 
+function Strategist:PrintCompTable()
+	print("Printing Comp")
+
+	for _, Id in ipairs(playerComp) do
+		print(Id)
+	end
+
+	print("Printing Comp END")
+end
+
 function Strategist:IsUnitIdInTable(unitId)
 	for _, Id in ipairs(unitIDs) do
 		if unitId == Id then
@@ -289,30 +279,6 @@ function Strategist:ARENA_PREP_OPPONENT_SPECIALIZATIONS()
 	end
 end
 
-function RefreshPartyMembers()
-	print("Refreshing...")
-	local _, _, _, _, maxPlayers, _, _, instanceMapID = GetInstanceInfo()
-
-	local numOfPartyMembers = GetNumGroupMembers()
-	print(numOfPartyMembers)
-	print("Max number of players allowed " .. maxPlayers)
-
-	for i = 1, numOfPartyMembers do
-		local unitId = "party" .. i
-
-		if UnitExists(unitId) then
-			if not Strategist:IsUnitIdInTable(unitId) then
-				table.insert(unitIDs, unitId)
-				print(unitId)
-			end
-		end
-	end
-
-	if not Strategist:IsUnitIdInTable("player") then
-		table.insert(unitIDs, "player")
-	end
-end
-
 function Strategist:IsValidUnit(unit)
 	if not unit then
 		return
@@ -329,41 +295,14 @@ function Strategist:LeftArena()
 	self:UnregisterEvent("GROUP_ROSTER_UPDATE", "EnqueuePlayers") -- add someone to the queue with this event, check if they already exist too
 	self:UnregisterEvent("INSPECT_READY")
 
-	Strategist:PrintUnitIdTable()
-
 	if frame then
 		frame:Hide()
 	end
 
+	Strategist:PrintCompTable()
+
 	unitIDs = {}
-end
-
-function Strategist:OnTimerClose(timer)
-	print("Closing timer...")
-	timer:Cancel()
-
-	-- Retrieve and display class and spec for each party member
-	local temp = ""
-	local enemyTemp = ""
-	for _, unitId in ipairs(unitIDs) do
-		local class, spec = Strategist:GetClassAndSpec(unitId)
-
-		if class and spec and not strmatch(unitId, "party(%d+)") then
-			if unitId == "player" or strmatch(unitId, "party(%d+)") then
-				print("Class: " .. class .. " spec: " .. spec)
-				temp = temp .. class .. spec
-			else
-				enemyTemp = enemyTemp .. class .. spec
-			end
-		end
-	end
-
-	print("my comp: " .. temp)
-	print("enemy comp: " .. enemyTemp)
-
-	Strategist:SetCurComp(temp)
-
-	Strategist:GUI()
+	playerComp = {}
 end
 
 function Strategist:SlashCommand(msg)
