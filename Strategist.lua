@@ -7,6 +7,7 @@ local editbox
 local button
 local unitIDs = {}
 
+
 local defaults = {
 	profile = {
 		message = "Welcome Home!",
@@ -72,7 +73,6 @@ end
 
 function Strategist:PLAYER_ENTERING_WORLD()
 	local _, instanceType, _, _, _, _, _, _ = GetInstanceInfo()
-	print("Hello, you are in a: " .. instanceType)
 
 	if instanceType == "arena" then
 		Strategist:EnteredArena()
@@ -89,8 +89,8 @@ function Strategist:EnteredArena()
 	self:RegisterEvent("ARENA_OPPONENT_UPDATE")
 
 	-- Get Party Information
-	local timer = C_Timer.NewTicker(5, RefreshPartyMembers)
-	C_Timer.After(30, function() Strategist:OnTimerClose(timer) end)
+	-- local timer = C_Timer.NewTicker(5, RefreshPartyMembers)                //THIS IS GOOD CODE
+	-- C_Timer.After(30, function() Strategist:OnTimerClose(timer) end)
 
 	local numOpps = GetNumArenaOpponentSpecs and GetNumArenaOpponentSpecs() or 0
 
@@ -100,18 +100,16 @@ function Strategist:EnteredArena()
 end
 
 function Strategist:GROUP_ROSTER_UPDATE()
-	-- Check the current group composition
 	local numGroupMembers = GetNumGroupMembers()
 	if numGroupMembers > 0 then
-		print("roster" .. numGroupMembers)
 		for i = 1, numGroupMembers do
 			local unitId = "party" .. i
 			if UnitExists(unitId) and not Strategist:IsUnitIdInTable(unitId) then
-				table.insert(unitIDs, unitId)
 				local class, spec = Strategist:GetClassAndSpec(unitId)
 				print(class)
 				print(spec)
 				if class and spec then
+					table.insert(unitIDs, unitId)
 					print(class .. " - " .. spec)
 				end
 			end
@@ -125,11 +123,14 @@ function Strategist:GetAllMyCompsHaveFaced(curComp)
 	return self.db.profile.comps[curComp]
 end
 
+function Sleep(s)
+	local timer = C_Timer.NewTicker(1, function() print("ticking") end)
+	C_Timer.After(s, function() timer:Cancel() end)
+end
+
 function Strategist:GetClassAndSpec(unitId)
-	-- local _, class, _, _, _, _ = GetPlayerInfoByGUID(UnitGUID(playerName))
-	-- print(class)
-	-- local specIndex = GetSpecialization(playerName)
-	-- local _, spec = GetSpecializationInfo(specIndex)
+	Sleep(5)
+
 	local iD = nil
 	print("GetClassAndSpec unitId" .. unitId)
 
@@ -139,7 +140,7 @@ function Strategist:GetClassAndSpec(unitId)
 			iD = select(1, GetSpecializationInfo(iD))
 			print("the next line is player iD")
 			print(iD)
-			-- elseif Strategist:IsValidUnit(unitId) then
+			-- elseif Strategist:IsValidUnit(unitId) then                              //OPONENTS
 			-- 	print("Arena person")
 			-- 	iD = GetArenaOpponentSpec and GetArenaOpponentSpec(tonumber(unitId))
 
@@ -147,12 +148,9 @@ function Strategist:GetClassAndSpec(unitId)
 			-- 		print("Arena id: " .. iD)
 			-- 	end
 		elseif strmatch(unitId, "party(%d+)") then
-			print("GetClassAndSpec party person")
 			iD = GetInspectSpecialization(unitId)
 		end
 
-		-- local class, _, classID = UnitClass(unitId)
-		-- Get the specialization name
 		print(iD)
 		if iD then
 			local specID, specName, description, icon, background, role, class = GetSpecializationInfoByID(iD)
@@ -162,34 +160,6 @@ function Strategist:GetClassAndSpec(unitId)
 	end
 
 	return nil, nil
-end
-
-function TryInspectParty(unitId)
-	local iD
-	local timer = C_Timer.NewTicker(1, CheckingInspect)
-
-	function CheckingInspect()
-		iD = CheckingInspectCallBack(unitId)
-	end
-
-	if iD then
-		timer:Cancel()
-	end
-	return iD
-end
-
-function CheckingInspectCallBack(unitId)
-	if CanInspect(unitId) then
-		print("Party person")
-
-		local iD = GetInspectSpecialization(unitId)
-		print("the next line is party iD")
-		print(iD)
-
-		return iD
-	end
-
-	return nil
 end
 
 function Strategist:PrintUnitIdTable()
@@ -294,7 +264,7 @@ function Strategist:OnTimerClose(timer)
 	for _, unitId in ipairs(unitIDs) do
 		local class, spec = Strategist:GetClassAndSpec(unitId)
 
-		if class and spec then
+		if class and spec and not strmatch(unitId, "party(%d+)") then
 			if unitId == "player" or strmatch(unitId, "party(%d+)") then
 				print("Class: " .. class .. " spec: " .. spec)
 				temp = temp .. class .. spec
@@ -306,8 +276,6 @@ function Strategist:OnTimerClose(timer)
 
 	print("my comp: " .. temp)
 	print("enemy comp: " .. enemyTemp)
-
-
 
 	Strategist:SetCurComp(temp)
 
@@ -343,7 +311,6 @@ function Strategist:SetCurComp(curComp)
 
 	self.db.profile.comps[curComp] = {}
 	print(curComp)
-	-- self.db:SaveData()
 end
 
 function Strategist:GUI()
