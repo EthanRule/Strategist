@@ -6,6 +6,7 @@ local frame
 local editbox
 local button
 local unitIDs = {}
+local pendingInspections = {}
 
 
 local defaults = {
@@ -69,7 +70,7 @@ end
 function Strategist:OnEnable()
 	self:RegisterEvent("PLAYER_ENTERING_WORLD")
 	self:RegisterEvent("GROUP_ROSTER_UPDATE", "EnqueuePlayers") -- add someone to the queue with this event, check if they already exist too
-	self:RegisterEvent("INSPECT_READY", "DequeuePlayer")
+	self:RegisterEvent("INSPECT_READY")
 end
 
 function Strategist:EnqueuePlayers()
@@ -79,12 +80,16 @@ function Strategist:EnqueuePlayers()
 			local unitId = "party" .. i
 			if UnitExists(unitId) and not Strategist:IsUnitIdInTable(unitId) then
 				table.insert(unitIDs, unitId)
+
+				-- Add the player to the pendingInspections table with their GUID
+				local guid = UnitGUID(unitId)
+				pendingInspections[guid] = unitId
 			end
 		end
 	else
 		print("You are not in a group.")
 	end
-	print("EnqueuPlayers UnitIdTable")
+	print("EnqueuePlayers UnitIdTable")
 	Strategist:PrintUnitIdTable()
 end
 
@@ -92,15 +97,55 @@ function Strategist:DequeuePlayer()
 	local player = "PlayerName" -- Replace with the actual name of the player you want to dequeue
 	local index = nil
 
+	print("in dequeue")
+
 	for i, queuedPlayer in ipairs(unitIDs) do
 		if queuedPlayer == player then
 			index = i
 			break
 		end
 	end
+
 	if index then
+		-- Perform asynchronous dequeue and inspection
+		local playerUnitId = unitIDs[index]
+		local canInspect = CanInspect(playerUnitId)
+
+		if canInspect then
+			-- Add the player to the pendingInspections table with their GUID
+			local guid = UnitGUID(playerUnitId)
+			pendingInspections[guid] = playerUnitId
+
+			NotifyInspect(playerUnitId)
+			Strategist:Print("Inspecting " .. playerUnitId .. "...")
+		else
+			Strategist:Print(playerUnitId .. "cannot be inspected.")
+		end
+
 		table.remove(UnitIDs, index)
-		-- Strategist:PrintUnitIdTable()
+		Strategist:PrintUnitIdTable()
+	end
+end
+
+function Strategist:INSPECT_READY(event, guid)
+	print("INSPECT_READY event fired for GUID: " .. guid)
+	-- Check if the inspected GUID is in the pendingInspections table
+	if pendingInspections[guid] then
+		local playerUnitId = pendingInspections[guid]
+
+		-- Remove the player from the pendingInspections table
+		pendingInspections[guid] = nil
+
+		local class, spec = Strategist:GetClassAndSpec(playerUnitId)
+		if class and spec then
+			-- Do something with the class and spec information (e.g., store it, print it, etc.)
+			print(playerUnitId .. " is a " .. class .. " " .. spec)
+		else
+			print("Failed to get class and spec for " .. playerUnitId)
+		end
+
+		-- After the inspection is complete, dequeue the player
+		Strategist:DequeuePlayer()
 	end
 end
 
@@ -116,21 +161,21 @@ function Strategist:PLAYER_ENTERING_WORLD()
 	self.instanceType = instanceType
 end
 
--- function Strategist:EnteredArena()
--- 	print("Entered arena.")
--- 	self:RegisterEvent("ARENA_PREP_OPPONENT_SPECIALIZATIONS")
--- 	self:RegisterEvent("ARENA_OPPONENT_UPDATE")
+function Strategist:EnteredArena()
+	print("Entered arena.")
+	self:RegisterEvent("ARENA_PREP_OPPONENT_SPECIALIZATIONS")
+	self:RegisterEvent("ARENA_OPPONENT_UPDATE")
 
--- 	-- Get Party Information
--- 	local timer = C_Timer.NewTicker(5, RefreshPartyMembers)
--- 	C_Timer.After(30, function() Strategist:OnTimerClose(timer) end)
+	-- Get Party Information
+	-- local timer = C_Timer.NewTicker(5, RefreshPartyMembers)
+	-- C_Timer.After(30, function() Strategist:OnTimerClose(timer) end)
 
--- 	local numOpps = GetNumArenaOpponentSpecs and GetNumArenaOpponentSpecs() or 0
+	local numOpps = GetNumArenaOpponentSpecs and GetNumArenaOpponentSpecs() or 0
 
--- 	if numOpps and numOpps > 0 then
--- 		Strategist:ARENA_PREP_OPPONENT_SPECIALIZATIONS()
--- 	end
--- end
+	if numOpps and numOpps > 0 then
+		Strategist:ARENA_PREP_OPPONENT_SPECIALIZATIONS()
+	end
+end
 
 -- function Strategist:GROUP_ROSTER_UPDATE()
 -- 	local numGroupMembers = GetNumGroupMembers()
