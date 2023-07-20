@@ -10,8 +10,7 @@ local pendingInspections = {}
 local playerComp = {}
 local enemyUnitIDs = {}
 local enemyComp = {}
-
-
+local guiBeingShown = false
 
 local defaults = {
 	profile = {
@@ -116,6 +115,8 @@ function Strategist:INSPECT_READY(event, guid)
 			print("Error: Failed to get class and spec")
 		end
 	end
+	
+	Strategist:CheckIfGUIReady()
 end
 
 function Strategist:PLAYER_ENTERING_WORLD()
@@ -214,13 +215,19 @@ function Strategist:ARENA_PREP_OPPONENT_SPECIALIZATIONS()
 		end
 	end
 
+	Strategist:CheckIfGUIReady()
+end
+
+function Strategist:CheckIfGUIReady()
 	local numOpps = GetNumArenaOpponentSpecs()
 	local numGroup = GetNumGroupMembers()
 	print("numopps " .. numOpps)
 	print("numgroup " .. numGroup)
 	print(#enemyComp)
 	print(#playerComp)
-	if numOpps == numGroup and #enemyComp == #playerComp then
+
+	if not guiBeingShown and numOpps == numGroup and #enemyComp == #playerComp then
+		guiBeingShown = true
 		table.sort(enemyComp, SortAlphabetically)
 		table.sort(playerComp, SortAlphabetically)
 
@@ -271,6 +278,7 @@ function Strategist:LeftArena()
 	print("enemyComp")
 	Strategist:PrintTable(enemyComp)
 
+	guiBeingShown = false
 	unitIDs = {}
 	playerComp = {}
 	enemyComp = {}
