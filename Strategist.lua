@@ -68,7 +68,40 @@ end
 
 function Strategist:OnEnable()
 	self:RegisterEvent("PLAYER_ENTERING_WORLD")
-	-- self:RegisterEvent("GROUP_ROSTER_UPDATE") -- add someone to the queue with this event, check if they already exist too
+	self:RegisterEvent("GROUP_ROSTER_UPDATE", "EnqueuePlayers") -- add someone to the queue with this event, check if they already exist too
+	self:RegisterEvent("INSPECT_READY", "DequeuePlayer")
+end
+
+function Strategist:EnqueuePlayers()
+	local numGroupMembers = GetNumGroupMembers()
+	if numGroupMembers > 0 then
+		for i = 1, numGroupMembers do
+			local unitId = "party" .. i
+			if UnitExists(unitId) and not Strategist:IsUnitIdInTable(unitId) then
+				table.insert(unitIDs, unitId)
+			end
+		end
+	else
+		print("You are not in a group.")
+	end
+	print("EnqueuPlayers UnitIdTable")
+	Strategist:PrintUnitIdTable()
+end
+
+function Strategist:DequeuePlayer()
+	local player = "PlayerName" -- Replace with the actual name of the player you want to dequeue
+	local index = nil
+
+	for i, queuedPlayer in ipairs(unitIDs) do
+		if queuedPlayer == player then
+			index = i
+			break
+		end
+	end
+	if index then
+		table.remove(UnitIDs, index)
+		-- Strategist:PrintUnitIdTable()
+	end
 end
 
 function Strategist:PLAYER_ENTERING_WORLD()
@@ -83,21 +116,21 @@ function Strategist:PLAYER_ENTERING_WORLD()
 	self.instanceType = instanceType
 end
 
-function Strategist:EnteredArena()
-	print("Entered arena.")
-	self:RegisterEvent("ARENA_PREP_OPPONENT_SPECIALIZATIONS")
-	self:RegisterEvent("ARENA_OPPONENT_UPDATE")
+-- function Strategist:EnteredArena()
+-- 	print("Entered arena.")
+-- 	self:RegisterEvent("ARENA_PREP_OPPONENT_SPECIALIZATIONS")
+-- 	self:RegisterEvent("ARENA_OPPONENT_UPDATE")
 
-	-- Get Party Information
-	local timer = C_Timer.NewTicker(5, RefreshPartyMembers)
-	C_Timer.After(30, function() Strategist:OnTimerClose(timer) end)
+-- 	-- Get Party Information
+-- 	local timer = C_Timer.NewTicker(5, RefreshPartyMembers)
+-- 	C_Timer.After(30, function() Strategist:OnTimerClose(timer) end)
 
-	local numOpps = GetNumArenaOpponentSpecs and GetNumArenaOpponentSpecs() or 0
+-- 	local numOpps = GetNumArenaOpponentSpecs and GetNumArenaOpponentSpecs() or 0
 
-	if numOpps and numOpps > 0 then
-		Strategist:ARENA_PREP_OPPONENT_SPECIALIZATIONS()
-	end
-end
+-- 	if numOpps and numOpps > 0 then
+-- 		Strategist:ARENA_PREP_OPPONENT_SPECIALIZATIONS()
+-- 	end
+-- end
 
 -- function Strategist:GROUP_ROSTER_UPDATE()
 -- 	local numGroupMembers = GetNumGroupMembers()
