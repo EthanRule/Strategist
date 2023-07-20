@@ -77,7 +77,7 @@ end
 
 function Strategist:EnqueuePlayers()
 	-- Enter Self into table
-	if not Strategist:IsInTable("player", unitIDs) then
+	if not Strategist:IsInTable(unitIDs, "player") then
 		table.insert(unitIDs, "player")
 	end
 
@@ -86,7 +86,7 @@ function Strategist:EnqueuePlayers()
 	if numGroupMembers > 0 then
 		for i = 1, numGroupMembers do
 			local unitId = "party" .. i
-			if UnitExists(unitId) and not Strategist:IsInTable(unitId, unitIDs) then
+			if UnitExists(unitId) and not Strategist:IsInTable(unitIDs, unitId) then
 				table.insert(unitIDs, unitId)
 
 				-- Add the player to the pendingInspections table with their GUID
@@ -108,7 +108,7 @@ function Strategist:INSPECT_READY(event, guid)
 		pendingInspections[guid] = nil
 
 		local class, spec = Strategist:GetClassAndSpec(playerUnitId)
-		if class and spec and not Strategist:IsInTable(class .. spec, playerComp) then
+		if class and spec and not Strategist:IsInTable(playerComp, class .. spec) then
 			-- Do something with the class and spec information (e.g., store it, print it, etc.)
 			print(playerUnitId .. ": " .. class .. " " .. spec)
 			table.insert(playerComp, class .. spec)
@@ -188,7 +188,7 @@ function Strategist:PrintTable(table)
 	print("Printing Table END")
 end
 
-function Strategist:IsInTable(item, table) -- reverse parameters
+function Strategist:IsInTable(table, item)
 	for _, Id in ipairs(table) do
 		if item == Id then
 			return true
@@ -207,12 +207,44 @@ function Strategist:ARENA_PREP_OPPONENT_SPECIALIZATIONS()
 		if specID and specID > 0 then
 			print("here")
 			local iD, specName, description, icon, background, role, class = GetSpecializationInfoByID(specID)
-			if class and specName and not Strategist:IsInTable(class .. specName, enemyComp) then
+			if class and specName and not Strategist:IsInTable(enemyComp, class .. specName) then
 				print(class .. specName)
 				table.insert(enemyComp, class .. specName)
 			end
 		end
 	end
+
+	local numOpps = GetNumArenaOpponentSpecs()
+	local numGroup = GetNumGroupMembers()
+	print("numopps " .. numOpps)
+	print("numgroup " .. numGroup)
+	print(#enemyComp)
+	print(#playerComp)
+	if numOpps == numGroup and #enemyComp == #playerComp then
+		table.sort(enemyComp, SortAlphabetically)
+		table.sort(playerComp, SortAlphabetically)
+
+		local concatPlayer = ConcatComp(playerComp)
+		local concatEnemy = ConcatComp(enemyComp)
+
+		Strategist:SetCurComp(concatPlayer, concatEnemy)
+
+		Strategist:GUI()
+	end
+end
+
+function SortAlphabetically(a, b)
+	return a:lower() < b:lower()
+end
+
+function ConcatComp(comp) 
+	local temp = ""
+
+	for _, classAndSpec in ipairs(comp) do
+		temp = temp .. classAndSpec
+	end
+
+	return temp
 end
 
 function Strategist:IsValidUnit(unit)
@@ -233,6 +265,7 @@ function Strategist:LeftArena()
 	if frame then
 		frame:Hide()
 	end
+
 	print("playerComp")
 	Strategist:PrintTable(playerComp)
 	print("enemyComp")
@@ -265,24 +298,29 @@ function Strategist:GetCurComp(info)
 	return self.db.profile.comps
 end
 
-function Strategist:SetCurComp(curComp)
-	if curComp == nil then
+function Strategist:SetCurComp(playerComp, enemyComp)
+	if not playerComp or not enemyComp then
 		return
 	end
 
-	self.db.profile.comps[curComp] = {}
-	print(curComp)
+	if not self.db.profile.comps[playerComp] then
+		self.db.profile.comps[playerComp] = {}
+	end
+
+	if not self.db.profile.comps[playerComp][enemyComp] then
+		self.db.profile.comps[playerComp][enemyComp] = ""
+	end
 end
 
 function Strategist:GUI()
 	print("Entered new zone!")
 
-	if frame ~= nil and frame:IsShown() then
+	if frame and frame:IsShown() then
 		print("Frame is already visible!")
 	else
 		print("Frame is not visible!")
 
-		if frame == nil then
+		if not frame then
 			print("Creating frame!")
 			frame = AceGUI:Create("Frame")
 			frame:SetTitle("Strategist")
@@ -296,6 +334,8 @@ function Strategist:GUI()
 
 			editbox = AceGUI:Create("MultiLineEditBox")
 			editbox:SetLabel("Insert text:")
+			local compText = self.db.profile.comps[ConcatComp(playerComp)][ConcatComp(enemyComp)]
+			editbox:SetText(compText)
 			editbox:SetWidth(400)
 			frame:AddChild(editbox)
 
