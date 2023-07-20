@@ -214,19 +214,26 @@ function Strategist:GetClassAndSpec(unitId)
 end
 
 function TryInspectParty(unitId)
-	local iD
-	local timer = C_Timer.NewTicker(1, function() -- Delayed request after 1 seconds
-		if CanInspect(unitId) then
-			print("Party person")
-			iD = GetInspectSpecialization(unitId)
-			timer:Cancel()
-		end
-	end)
+	local iD 
+	local timer = C_Timer.NewTicker(1, CheckingInspect)
+
+	function CheckingInspect()
+		iD = CheckingInspectCallBack(timer, unitId)
+	end
+
 	return iD
 end
 
-function CheckingInspect()
+function CheckingInspectCallBack(timer, unitId)
+	if CanInspect(unitId) then
+		print("Party person")
+		local iD = GetInspectSpecialization(unitId)
+		timer:Cancel()
 
+		return iD
+	end
+	
+	return nil
 end
 
 function Strategist:PrintUnitIdTable()
