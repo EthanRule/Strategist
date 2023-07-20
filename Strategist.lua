@@ -99,38 +99,6 @@ function Strategist:EnqueuePlayers()
 	end
 end
 
-function Strategist:DequeuePlayer()
-	local player = "PlayerName"
-	local index = nil
-
-	for i, queuedPlayer in ipairs(unitIDs) do
-		if queuedPlayer == player then
-			index = i
-			break
-		end
-	end
-
-	if index then
-		-- Perform asynchronous dequeue and inspection
-		local playerUnitId = unitIDs[index]
-		local canInspect = CanInspect(playerUnitId)
-
-		if canInspect then
-			-- Add the player to the pendingInspections table with their GUID
-			local guid = UnitGUID(playerUnitId)
-			pendingInspections[guid] = playerUnitId
-
-			NotifyInspect(playerUnitId)
-			print("Inspecting " .. playerUnitId .. "...")
-		else
-			print(playerUnitId .. "Error: Player Cannot be inspected.")
-		end
-
-		table.remove(UnitIDs, index)
-		Strategist:PrintUnitIdTable()
-	end
-end
-
 function Strategist:INSPECT_READY(event, guid)
 	-- Check if the inspected GUID is in the pendingInspections table
 	if pendingInspections[guid] then
@@ -140,7 +108,7 @@ function Strategist:INSPECT_READY(event, guid)
 		pendingInspections[guid] = nil
 
 		local class, spec = Strategist:GetClassAndSpec(playerUnitId)
-		if class and spec then
+		if class and spec and not Strategist:IsCompInTable(class .. spec) then
 			-- Do something with the class and spec information (e.g., store it, print it, etc.)
 			print(playerUnitId .. ": " .. class .. " " .. spec)
 			table.insert(playerComp, class .. spec)
@@ -148,8 +116,6 @@ function Strategist:INSPECT_READY(event, guid)
 			print("Error: Failed to get class and spec")
 		end
 
-		-- After the inspection is complete, dequeue the player
-		Strategist:DequeuePlayer()
 	end
 end
 
@@ -254,6 +220,16 @@ function Strategist:IsUnitIdInTable(unitId)
 	return false
 end
 
+function Strategist:IsCompInTable(classAndSpec)
+	for _, Id in ipairs(playerComp) do
+		if classAndSpec == Id then
+			return true
+		end
+	end
+
+	return false
+end
+
 function Strategist:ARENA_OPPONENT_UPDATE(event, unit, type)
 	if not Strategist:IsValidUnit(unit) then
 		return
@@ -298,7 +274,7 @@ function Strategist:LeftArena()
 	if frame then
 		frame:Hide()
 	end
-
+	Strategist:PrintUnitIdTable()
 	Strategist:PrintCompTable()
 
 	unitIDs = {}
