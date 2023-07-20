@@ -188,20 +188,16 @@ function Strategist:GetClassAndSpec(unitId)
 			iD = select(1, GetSpecializationInfo(iD))
 			print("the next line is player iD")
 			print(iD)
-		elseif Strategist:IsValidUnit(unitId) then
-			print("Arena person")
-			iD = GetArenaOpponentSpec and GetArenaOpponentSpec(tonumber(unitId))
+			-- elseif Strategist:IsValidUnit(unitId) then
+			-- 	print("Arena person")
+			-- 	iD = GetArenaOpponentSpec and GetArenaOpponentSpec(tonumber(unitId))
 
-			if iD then
-				print("Arena id: " .. iD)
-			end
+			-- 	if iD then
+			-- 		print("Arena id: " .. iD)
+			-- 	end
 		elseif strmatch(unitId, "party(%d+)") then
-			-- NotifyInspect(unitId) -- doesnt work with party TODO: Add delayed requests
-			-- while not CanInspect(unitId) do
-
-			-- end
-			print("Party person")
-			iD = GetInspectSpecialization(unitId)
+			NotifyInspect(unitId) -- Initiate the inspection
+			iD = TryInspectParty(unitId)
 		end
 
 		-- local class, _, classID = UnitClass(unitId)
@@ -217,9 +213,25 @@ function Strategist:GetClassAndSpec(unitId)
 	return nil, nil
 end
 
+function TryInspectParty(unitId)
+	local iD
+	local timer = C_Timer.NewTicker(1, function() -- Delayed request after 1 seconds
+		if CanInspect(unitId) then
+			print("Party person")
+			iD = GetInspectSpecialization(unitId)
+			timer:Cancel()
+		end
+	end)
+	return iD
+end
+
+function CheckingInspect()
+
+end
+
 function Strategist:PrintUnitIdTable()
 	print("Printing IDs")
-	
+
 	for _, Id in ipairs(unitIDs) do
 		print(Id)
 	end
@@ -248,13 +260,13 @@ function Strategist:ARENA_OPPONENT_UPDATE(event, unit, type)
 
 	if specID and specID > 0 and not Strategist:IsUnitIdInTable(unit) then
 		table.insert(unitIDs, unit)
-	end	
+	end
 end
 
 function Strategist:ARENA_PREP_OPPONENT_SPECIALIZATIONS()
 	print("Prepping opponent information")
 	for i = 1, GetNumArenaOpponentSpecs and GetNumArenaOpponentSpecs() or 0 do
-		local unit = "arena"..i
+		local unit = "arena" .. i
 		local specID = GetArenaOpponentSpec and GetArenaOpponentSpec(i)
 
 		if specID and specID > 0 and not Strategist:IsUnitIdInTable(unit) then
@@ -266,7 +278,7 @@ end
 function RefreshPartyMembers()
 	print("Refreshing...")
 	local _, _, _, _, maxPlayers, _, _, instanceMapID = GetInstanceInfo()
-	
+
 	local numOfPartyMembers = GetNumGroupMembers()
 	print(numOfPartyMembers)
 	print("Max number of players allowed " .. maxPlayers)
