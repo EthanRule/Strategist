@@ -68,7 +68,7 @@ end
 
 function Strategist:OnEnable()
 	self:RegisterEvent("PLAYER_ENTERING_WORLD")
-	-- self:RegisterEvent("GROUP_ROSTER_UPDATE")
+	-- self:RegisterEvent("GROUP_ROSTER_UPDATE") -- add someone to the queue with this event, check if they already exist too
 end
 
 function Strategist:PLAYER_ENTERING_WORLD()
