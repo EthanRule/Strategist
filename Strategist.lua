@@ -74,6 +74,12 @@ function Strategist:OnEnable()
 end
 
 function Strategist:EnqueuePlayers()
+	-- Enter Self into table
+	if not Strategist:IsUnitIdInTable("player") then
+		table.insert(unitIDs, "player")
+	end
+
+	-- Enter Teamates into table
 	local numGroupMembers = GetNumGroupMembers()
 	if numGroupMembers > 0 then
 		for i = 1, numGroupMembers do
@@ -89,15 +95,11 @@ function Strategist:EnqueuePlayers()
 	else
 		print("You are not in a group.")
 	end
-	print("EnqueuePlayers UnitIdTable")
-	Strategist:PrintUnitIdTable()
 end
 
 function Strategist:DequeuePlayer()
-	local player = "PlayerName" -- Replace with the actual name of the player you want to dequeue
+	local player = "PlayerName"
 	local index = nil
-
-	print("in dequeue")
 
 	for i, queuedPlayer in ipairs(unitIDs) do
 		if queuedPlayer == player then
@@ -117,9 +119,9 @@ function Strategist:DequeuePlayer()
 			pendingInspections[guid] = playerUnitId
 
 			NotifyInspect(playerUnitId)
-			Strategist:Print("Inspecting " .. playerUnitId .. "...")
+			print("Inspecting " .. playerUnitId .. "...")
 		else
-			Strategist:Print(playerUnitId .. "cannot be inspected.")
+			print(playerUnitId .. "Error: Player Cannot be inspected.")
 		end
 
 		table.remove(UnitIDs, index)
@@ -128,7 +130,6 @@ function Strategist:DequeuePlayer()
 end
 
 function Strategist:INSPECT_READY(event, guid)
-	print("INSPECT_READY event fired for GUID: " .. guid)
 	-- Check if the inspected GUID is in the pendingInspections table
 	if pendingInspections[guid] then
 		local playerUnitId = pendingInspections[guid]
@@ -139,9 +140,9 @@ function Strategist:INSPECT_READY(event, guid)
 		local class, spec = Strategist:GetClassAndSpec(playerUnitId)
 		if class and spec then
 			-- Do something with the class and spec information (e.g., store it, print it, etc.)
-			print(playerUnitId .. " is a " .. class .. " " .. spec)
+			print(playerUnitId .. ": " .. class .. " " .. spec)
 		else
-			print("Failed to get class and spec for " .. playerUnitId)
+			print("Error: Failed to get class and spec")
 		end
 
 		-- After the inspection is complete, dequeue the player
@@ -162,10 +163,18 @@ function Strategist:PLAYER_ENTERING_WORLD()
 end
 
 function Strategist:EnteredArena()
-	print("Entered arena.")
 	self:RegisterEvent("ARENA_PREP_OPPONENT_SPECIALIZATIONS")
 	self:RegisterEvent("ARENA_OPPONENT_UPDATE")
 
+	print("Entered Arena")
+
+	local class, spec = Strategist:GetClassAndSpec("player")
+	if class and spec then
+		-- Do something with the class and spec information (e.g., store it, print it, etc.)
+		print("player" .. ": " .. class .. " " .. spec)
+	else
+		print("Error: Failed to get player class and spec")
+	end
 	-- Get Party Information
 	-- local timer = C_Timer.NewTicker(5, RefreshPartyMembers)
 	-- C_Timer.After(30, function() Strategist:OnTimerClose(timer) end)
@@ -205,14 +214,11 @@ end
 
 function Strategist:GetClassAndSpec(unitId)
 	local iD = nil
-	print("GetClassAndSpec unitId" .. unitId)
 
 	if unitId then
 		if unitId == "player" then
 			iD = GetSpecialization()
 			iD = select(1, GetSpecializationInfo(iD))
-			print("the next line is player iD")
-			print(iD)
 			-- elseif Strategist:IsValidUnit(unitId) then                              //OPONENTS
 			-- 	print("Arena person")
 			-- 	iD = GetArenaOpponentSpec and GetArenaOpponentSpec(tonumber(unitId))
@@ -224,7 +230,6 @@ function Strategist:GetClassAndSpec(unitId)
 			iD = GetInspectSpecialization(unitId)
 		end
 
-		print(iD)
 		if iD then
 			local specID, specName, description, icon, background, role, class = GetSpecializationInfoByID(iD)
 
@@ -259,7 +264,6 @@ function Strategist:ARENA_OPPONENT_UPDATE(event, unit, type)
 	if not Strategist:IsValidUnit(unit) then
 		return
 	end
-	print("Opponent updated")
 
 	local id = string.match(unit, "arena(%d)")
 	local specID = GetArenaOpponentSpec and GetArenaOpponentSpec(tonumber(id))
@@ -318,6 +322,7 @@ function Strategist:LeftArena()
 	print("Left arena.")
 	self:UnregisterEvent("ARENA_PREP_OPPONENT_SPECIALIZATIONS")
 	self:UnregisterEvent("ARENA_OPPONENT_UPDATE")
+
 	Strategist:PrintUnitIdTable()
 
 	if frame then
