@@ -307,12 +307,13 @@ function Strategist:LeftArena()
 	self:UnregisterEvent("GROUP_ROSTER_UPDATE", "EnqueuePlayers") -- add someone to the queue with this event, check if they already exist too
 	self:UnregisterEvent("INSPECT_READY")
 
-    if frame then
-        print("Releasing frame")
-        frame:Release()
-        frame = nil -- Set the frame to nil after releasing
-		editbox = nil
-    end
+	-- Automatically close the frame when the person leaves the arena
+    -- if frame then
+    --     print("Releasing frame")
+    --     frame:Release()
+    --     frame = nil -- Set the frame to nil after releasing
+	-- 	editbox = nil
+    -- end
 
 	print("playerComp")
 	Strategist:PrintTable(playerComp)
@@ -380,6 +381,7 @@ function Strategist:GUI()
 		frame = AceGUI:Create("Frame")
 		frame:SetTitle("Strategist")
 		frame:SetCallback("OnClose", function(widget)
+			print("Closing the frame")
 			frame:Release()
 			frame = nil
 			editbox = nil
