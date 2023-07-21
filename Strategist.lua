@@ -13,6 +13,7 @@ local enemyComp = {}
 local defaults = {
 	profile = {
 		message = "Welcome Home!",
+		popUp = true,
 		comps = {},
 	},
 }
@@ -22,36 +23,13 @@ local options = {
 	handler = Strategist,
 	type = "group",
 	args = {
-		msg = {
-			type = "input",
-			name = "Message",
-			desc = "The message to be displayed when you get home.",
-			usage = "<Your message>",
-			get = "GetCurComp",
-			set = "SetCurComp",
+		popUp = {
+			name = "Show Popup Window",
+			desc = "Enables / disables the popup window",
+			type = "toggle",
+			set = "SetPopUp",
+			get = "GetPopUp",
 		},
-		-- nestedDict = {         -- Adding a nested dictionary
-		-- 	name = "Nested Dictionary", -- Add a valid string value for the name
-		-- 	type = "group",
-		-- 	args = {
-		-- 		subKey1 = {
-		-- 			type = "input",
-		-- 			name = "Sub Key 1",
-		-- 			desc = "Description for Sub Key 1",
-		-- 			usage = "<Value for Sub Key 1>", -- Example usage field
-		-- 			get = function(info) end, -- Example get function
-		-- 			set = function(info, value) end, -- Example set function
-		-- 		},
-		-- 		subKey2 = {
-		-- 			type = "toggle",
-		-- 			name = "Sub Key 2",
-		-- 			desc = "Description for Sub Key 2",
-		-- 			get = function(info) end, -- Example get function
-		-- 			set = function(info, value) end, -- Example set function
-		-- 		},
-		-- 		-- Additional key-value pairs within the nested dictionary
-		-- 	}
-		-- },
 	},
 }
 
@@ -66,6 +44,15 @@ function Strategist:OnInitialize()
 
 	self:RegisterChatCommand("strat", "SlashCommand")
 	self:RegisterChatCommand("strategist", "SlashCommand")
+end
+
+function Strategist:SetPopUp(info)
+	local pop = self.db.profile.popUp
+	self.db.profile.popUp = not pop
+end
+
+function Strategist:GetPopUp(info)
+	return self.db.profile.popUp
 end
 
 function Strategist:OnEnable()
@@ -114,7 +101,7 @@ function Strategist:INSPECT_READY(event, guid)
 			print("Error: Failed to get class and spec")
 		end
 	end
-	
+
 	Strategist:CheckIfGUIReady()
 end
 
@@ -243,7 +230,7 @@ function SortAlphabetically(a, b)
 	return a:lower() < b:lower()
 end
 
-function ConcatComp(comp) 
+function ConcatComp(comp)
 	local temp = ""
 
 	for _, classAndSpec in ipairs(comp) do
@@ -320,6 +307,9 @@ function Strategist:SetCurComp(playerComp, enemyComp)
 end
 
 function Strategist:GUI()
+	if not self.db.profile.popUp then
+		return
+	end
 	print("Entered new zone!")
 
 	local concatPlayer = ConcatComp(playerComp)
@@ -332,22 +322,13 @@ function Strategist:GUI()
 		print("Frame is already visible!")
 
 		editbox:Release()
-		editbox = AceGUI:Create("MultiLineEditBox")
-		editbox:SetLabel("Look at the strat/insert strat:")
-		editbox:SetText(compText)
-		editbox:SetWidth(400)
-		editbox:SetCallback("OnEnterPressed", function(widget, event, text)
-			print("modified text upcoming: ")
-			print(text)
-			self.db.profile.comps[concatPlayer][concatEnemy] = text
-		end)
-		frame:AddChild(editbox)
+		Strategist:CreateEditBox(compText, concatPlayer, concatEnemy)
 	else
 		print("Frame is not visible!")
 
 		if not frame then
 			print("Creating frame!")
-			
+
 			frame = AceGUI:Create("Frame")
 			frame:SetTitle("Strategist")
 			frame:SetCallback("OnClose", function(widget)
@@ -358,19 +339,23 @@ function Strategist:GUI()
 			frame:SetWidth(400)
 			frame:SetHeight(200)
 
-			editbox = AceGUI:Create("MultiLineEditBox")
-			editbox:SetLabel("Look at the strat/insert strat:")
-			editbox:SetText(compText)
-			editbox:SetWidth(400)
-			editbox:SetCallback("OnEnterPressed", function(widget, event, text)
-				print("modified text upcoming: ")
-				print(text)
-				self.db.profile.comps[concatPlayer][concatEnemy] = text
-			end)
-			frame:AddChild(editbox)
+			Strategist:CreateEditBox(compText, concatPlayer, concatEnemy)
 		else
 			print("Showing frame!")
 			frame:Show()
 		end
 	end
+end
+
+function Strategist:CreateEditBox(compText, concatPlayer, concatEnemy)
+	editbox = AceGUI:Create("MultiLineEditBox")
+	editbox:SetLabel(concatPlayer .. "VS" .. concatEnemy)
+	editbox:SetText(compText)
+	editbox:SetWidth(400)
+	editbox:SetCallback("OnEnterPressed", function(widget, event, text)
+		print("modified text upcoming: ")
+		print(text)
+		self.db.profile.comps[concatPlayer][concatEnemy] = text
+	end)
+	frame:AddChild(editbox)
 end
