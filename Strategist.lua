@@ -380,7 +380,7 @@ function Strategist:GUI()
 		frame = AceGUI:Create("Frame")
 		frame:SetTitle("Strategist")
 		frame:SetCallback("OnClose", function(widget)
-			AceGUI:Release(widget)
+			frame:Release()
 			frame = nil
 			editbox = nil
 		end)
