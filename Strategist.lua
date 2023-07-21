@@ -347,12 +347,17 @@ function Strategist:GUI()
 			local compText = self.db.profile.comps[ConcatComp(playerComp)][ConcatComp(enemyComp)]
 			editbox:SetText(compText)
 			editbox:SetWidth(400)
-			frame:AddChild(editbox)
 
 			button = AceGUI:Create("Button")
 			button:SetText("Save")
 			button:SetWidth(100)
-			frame:AddChild(button)
+			button:SetCallback("OnClick", function()
+				local newCompText = editbox:GetText()
+
+				self.db.profile.comps[ConcatComp(playerComp)][ConcatComp(enemyComp)] = newCompText
+			end)
+			editbox:AddChild(button)
+			frame:AddChild(editbox)
 		else
 			print("Showing frame!")
 			frame:Show()
