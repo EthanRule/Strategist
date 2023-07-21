@@ -45,6 +45,7 @@ function Strategist:OnInitialize()
 
 	self:RegisterChatCommand("strat", "SlashCommand")
 	self:RegisterChatCommand("strategist", "SlashCommand")
+	--Split("MageFrost-MonkWindwalker-PriestDiscipline")
 end
 
 function Strategist:GetMainTable()
@@ -76,6 +77,12 @@ function Strategist:GetMainTable()
 				options.args[comp] = curComp
 			end
 		end
+	end
+end
+
+function Split(comp)
+	for classAndSpec in string.gmatch(comp, "([^%-]+)") do
+		print(classAndSpec)
 	end
 end
 
@@ -274,8 +281,12 @@ end
 function ConcatComp(comp)
 	local temp = ""
 
-	for _, classAndSpec in ipairs(comp) do
-		temp = temp .. classAndSpec
+	for i, classAndSpec in ipairs(comp) do
+		if i ~= 1 then
+			temp = temp .. "-" .. classAndSpec
+		else
+			temp = temp .. classAndSpec
+		end
 	end
 
 	return temp
@@ -296,19 +307,22 @@ function Strategist:LeftArena()
 	self:UnregisterEvent("GROUP_ROSTER_UPDATE", "EnqueuePlayers") -- add someone to the queue with this event, check if they already exist too
 	self:UnregisterEvent("INSPECT_READY")
 
-	if frame then
-		frame:Hide()
-	end
+    if frame then
+        print("Releasing frame")
+        frame:Release()
+        frame = nil -- Set the frame to nil after releasing
+		editbox = nil
+    end
 
 	print("playerComp")
 	Strategist:PrintTable(playerComp)
 	print("enemyComp")
 	Strategist:PrintTable(enemyComp)
 
-	guiBeingShown = false
 	unitIDs = {}
 	playerComp = {}
 	enemyComp = {}
+	processedUnitIDs = {}
 end
 
 function Strategist:SlashCommand(msg)
@@ -351,6 +365,7 @@ function Strategist:GUI()
 	if not self.db.profile.popUp then
 		return
 	end
+	
 	print("Entered new zone!")
 
 	local concatPlayer = ConcatComp(playerComp)
@@ -359,36 +374,37 @@ function Strategist:GUI()
 	print("comp text upcoming: ")
 	print(compText)
 
-	if frame and frame:IsShown() then
-		print("Frame is already visible!")
+	if not frame then
+		print("Creating frame!")
 
-		editbox:Release()
+		frame = AceGUI:Create("Frame")
+		frame:SetTitle("Strategist")
+		frame:SetCallback("OnClose", function(widget)
+			AceGUI:Release(widget)
+			frame = nil
+			editbox = nil
+		end)
+		frame:SetLayout("Fill")
+		frame:SetWidth(400)
+		frame:SetHeight(200)
+
 		Strategist:CreateEditBox(compText, concatPlayer, concatEnemy)
 	else
-		print("Frame is not visible!")
-
-		if not frame then
-			print("Creating frame!")
-
-			frame = AceGUI:Create("Frame")
-			frame:SetTitle("Strategist")
-			frame:SetCallback("OnClose", function(widget)
-				-- AceGUI:Release(widget)
-				widget:Hide() -- Hide the frame instead of releasing it
-			end)
-			frame:SetLayout("Fill")
-			frame:SetWidth(400)
-			frame:SetHeight(200)
+		if frame:IsShown() then
+			print("Frame is already visible!")
 
 			Strategist:CreateEditBox(compText, concatPlayer, concatEnemy)
-		else
-			print("Showing frame!")
-			frame:Show()
 		end
 	end
 end
 
 function Strategist:CreateEditBox(compText, concatPlayer, concatEnemy)
+	if editbox then
+        print("Releasing editbox")
+        editbox:Release()
+        editbox = nil
+    end
+
 	editbox = AceGUI:Create("MultiLineEditBox")
 	editbox:SetLabel(concatPlayer .. "VS" .. concatEnemy)
 	editbox:SetText(compText)
