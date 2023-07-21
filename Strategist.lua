@@ -48,28 +48,27 @@ function Strategist:OnInitialize()
 end
 
 function Strategist:GetMainTable()
-	local tableOfComps = self.db.profile["comps"]
-	print(self.db.profile["comps"])
+	local tableOfComps = self.db.profile.comps
 
 	for comp, enemyTable in pairs(tableOfComps) do
-		-- add comp to col
-		print(comp)
-		local curComp = {}
-		curComp["name"] = comp
-		curComp["type"] = "group"
-		local enemyComps = {}
-		local enemyTable = self.db.profile.comps[comp]
-		for enemyComp, strat in pairs(enemyTable) do
-			print(enemyComp)
-			-- add enemy comps to col
-			local curEnemyComp = {}
-			curEnemyComp["name"] = enemyComp
-			curEnemyComp["type"] = "input"
-			table.insert(enemyComps, curEnemyComp)
+		if comp then
+			local curComp = {}
+			local enemyComps = {}
+			curComp["name"] = comp
+			curComp["type"] = "group"
+			
+			if enemyTable and type(enemyTable) == "table" then
+				for enemyComp, strat in pairs(enemyTable) do
+					local curEnemyComp = {}
+					curEnemyComp["name"] = enemyComp
+					curEnemyComp["type"] = "input"
+					enemyComps[enemyComp] = curEnemyComp
+				end
+
+				curComp["args"] = enemyComps
+				options.args[comp] = curComp
+			end
 		end
-		curComp["args"] = enemyComps
-		local optionsTable = options.args
-		table.insert(optionsTable, curComp)
 	end
 end
 
