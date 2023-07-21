@@ -332,6 +332,13 @@ function Strategist:GUI()
 
 		if not frame then
 			print("Creating frame!")
+
+			local concatPlayer = ConcatComp(playerComp)
+			local concatEnemy = ConcatComp(enemyComp)
+			local compText = self.db.profile.comps[concatPlayer][concatEnemy]
+			print("comp text upcoming: ")
+			print(compText)
+
 			frame = AceGUI:Create("Frame")
 			frame:SetTitle("Strategist")
 			frame:SetCallback("OnClose", function(widget)
@@ -343,20 +350,14 @@ function Strategist:GUI()
 			frame:SetHeight(200)
 
 			editbox = AceGUI:Create("MultiLineEditBox")
-			editbox:SetLabel("Insert text:")
-			local compText = self.db.profile.comps[ConcatComp(playerComp)][ConcatComp(enemyComp)]
+			editbox:SetLabel("Look at the strat/insert strat:")
 			editbox:SetText(compText)
 			editbox:SetWidth(400)
-
-			button = AceGUI:Create("Button")
-			button:SetText("Save")
-			button:SetWidth(100)
-			button:SetCallback("OnClick", function()
-				local newCompText = editbox:GetText()
-
-				self.db.profile.comps[ConcatComp(playerComp)][ConcatComp(enemyComp)] = newCompText
+			editbox:SetCallback("OnEnterPressed", function(widget, event, text)
+				print("modified text upcoming: ")
+				print(text)
+				self.db.profile.comps[concatPlayer][concatEnemy] = text
 			end)
-			editbox:AddChild(button)
 			frame:AddChild(editbox)
 		else
 			print("Showing frame!")
