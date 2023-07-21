@@ -30,6 +30,8 @@ local options = {
 			set = "SetPopUp",
 			get = "GetPopUp",
 		},
+
+
 	},
 }
 
@@ -41,9 +43,26 @@ function Strategist:OnInitialize()
 	local profiles = LibStub("AceDBOptions-3.0"):GetOptionsTable(self.db)
 	AC:RegisterOptionsTable("Strategist_Profiles", profiles)
 	ACD:AddToBlizOptions("Strategist_Profiles", "Profiles", "Strategist")
+	print(options.args.popUp.name)
+	Strategist:GetMainTable()
 
 	self:RegisterChatCommand("strat", "SlashCommand")
 	self:RegisterChatCommand("strategist", "SlashCommand")
+end
+
+function Strategist:GetMainTable()
+	local table = self.db.profile.comps
+
+	for _, comp in ipairs(table) do
+		-- add comp to col
+		local curComp = {}
+		curComp["name"] = comp
+		curComp["desc"] = "This comp is:" .. comp
+		local enemyTable = self.db.profile.comps[comp]
+		for _, enemyComp in ipairs(enemyTable) do
+			-- add enemy comps to col
+		end
+	end
 end
 
 function Strategist:SetPopUp(info)
