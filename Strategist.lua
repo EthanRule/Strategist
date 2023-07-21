@@ -30,38 +30,46 @@ local options = {
 			set = "SetPopUp",
 			get = "GetPopUp",
 		},
-
-
 	},
 }
 
 function Strategist:OnInitialize()
 	self.db = LibStub("AceDB-3.0"):New("StrategistDB", defaults, true)
+	Strategist:GetMainTable()
 	AC:RegisterOptionsTable("Strategist_options", options)
 	self.optionsFrame = ACD:AddToBlizOptions("Strategist_options", "Strategist")
 
 	local profiles = LibStub("AceDBOptions-3.0"):GetOptionsTable(self.db)
 	AC:RegisterOptionsTable("Strategist_Profiles", profiles)
 	ACD:AddToBlizOptions("Strategist_Profiles", "Profiles", "Strategist")
-	print(options.args.popUp.name)
-	Strategist:GetMainTable()
 
 	self:RegisterChatCommand("strat", "SlashCommand")
 	self:RegisterChatCommand("strategist", "SlashCommand")
 end
 
 function Strategist:GetMainTable()
-	local table = self.db.profile.comps
-
-	for _, comp in ipairs(table) do
+	local tableOfComps = self.db.profile.comps
+	print(type(tableOfComps))
+	print("Length of table " .. #tableOfComps)
+	for _, comp in ipairs(tableOfComps) do
 		-- add comp to col
+		print(comp)
 		local curComp = {}
 		curComp["name"] = comp
-		curComp["desc"] = "This comp is:" .. comp
+		curComp["type"] = "group"
+		local enemyComps = {}
 		local enemyTable = self.db.profile.comps[comp]
 		for _, enemyComp in ipairs(enemyTable) do
+			print(enemyComp)
 			-- add enemy comps to col
+			local curEnemyComp = {}
+			curEnemyComp["name"] = enemyComp
+			curEnemyComp["type"] = "input"
+			table.insert(enemyComps, curEnemyComp)
 		end
+		curComp["args"] = enemyComps
+		local optionsTable = options.args
+		table.insert(optionsTable, curComp)
 	end
 end
 
