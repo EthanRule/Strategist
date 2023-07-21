@@ -8,7 +8,7 @@ local button
 local unitIDs = {}
 local pendingInspections = {}
 local playerComp = {}
-local enemyUnitIDs = {}
+local processedUnitIDs = {}
 local enemyComp = {}
 local guiBeingShown = false
 
@@ -107,7 +107,8 @@ function Strategist:INSPECT_READY(event, guid)
 		pendingInspections[guid] = nil
 
 		local class, spec = Strategist:GetClassAndSpec(playerUnitId)
-		if class and spec and not Strategist:IsInTable(playerComp, class .. spec) then
+		if class and spec and not Strategist:IsInTable(processedUnitIDs, playerUnitId) then
+			table.insert(processedUnitIDs, playerUnitId)
 			-- Do something with the class and spec information (e.g., store it, print it, etc.)
 			print(playerUnitId .. ": " .. class .. " " .. spec)
 			table.insert(playerComp, class .. spec)
@@ -208,7 +209,8 @@ function Strategist:ARENA_PREP_OPPONENT_SPECIALIZATIONS()
 		if specID and specID > 0 then
 			print("here")
 			local iD, specName, description, icon, background, role, class = GetSpecializationInfoByID(specID)
-			if class and specName and not Strategist:IsInTable(enemyComp, class .. specName) then
+			if class and specName and not Strategist:IsInTable(processedUnitIDs, unit) then
+				table.insert(processedUnitIDs, unit)
 				print(class .. specName)
 				table.insert(enemyComp, class .. specName)
 			end
