@@ -62,6 +62,13 @@ function Strategist:GetMainTable()
 					local curEnemyComp = {}
 					curEnemyComp["name"] = enemyComp
 					curEnemyComp["type"] = "input"
+					curEnemyComp["multiline"] = true
+					curEnemyComp["set"] = function(info, text) 
+						self.db.profile.comps[comp][enemyComp] = text
+					end
+					curEnemyComp["get"] = function()
+						return self.db.profile.comps[comp][enemyComp]
+					end
 					enemyComps[enemyComp] = curEnemyComp
 				end
 
