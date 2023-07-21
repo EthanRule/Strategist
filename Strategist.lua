@@ -48,10 +48,10 @@ function Strategist:OnInitialize()
 end
 
 function Strategist:GetMainTable()
-	local tableOfComps = self.db.profile.comps
-	print(type(tableOfComps))
-	print("Length of table " .. #tableOfComps)
-	for _, comp in ipairs(tableOfComps) do
+	local tableOfComps = self.db.profile["comps"]
+	print(self.db.profile["comps"])
+
+	for comp, enemyTable in pairs(tableOfComps) do
 		-- add comp to col
 		print(comp)
 		local curComp = {}
@@ -59,7 +59,7 @@ function Strategist:GetMainTable()
 		curComp["type"] = "group"
 		local enemyComps = {}
 		local enemyTable = self.db.profile.comps[comp]
-		for _, enemyComp in ipairs(enemyTable) do
+		for enemyComp, strat in pairs(enemyTable) do
 			print(enemyComp)
 			-- add enemy comps to col
 			local curEnemyComp = {}
