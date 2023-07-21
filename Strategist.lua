@@ -4,13 +4,11 @@ local ACD = LibStub("AceConfigDialog-3.0")
 local AceGUI = LibStub("AceGUI-3.0")
 local frame
 local editbox
-local button
 local unitIDs = {}
 local pendingInspections = {}
 local playerComp = {}
 local processedUnitIDs = {}
 local enemyComp = {}
-local guiBeingShown = false
 
 local defaults = {
 	profile = {
@@ -228,8 +226,7 @@ function Strategist:CheckIfGUIReady()
 	print(#enemyComp)
 	print(#playerComp)
 
-	if not guiBeingShown and numOpps == numGroup and #enemyComp == #playerComp then
-		guiBeingShown = true
+	if numOpps > 1 and numGroup > 1 and numOpps == numGroup and #enemyComp == #playerComp then
 		table.sort(enemyComp, SortAlphabetically)
 		table.sort(playerComp, SortAlphabetically)
 
@@ -325,20 +322,32 @@ end
 function Strategist:GUI()
 	print("Entered new zone!")
 
+	local concatPlayer = ConcatComp(playerComp)
+	local concatEnemy = ConcatComp(enemyComp)
+	local compText = self.db.profile.comps[concatPlayer][concatEnemy]
+	print("comp text upcoming: ")
+	print(compText)
+
 	if frame and frame:IsShown() then
 		print("Frame is already visible!")
+
+		editbox:Release()
+		editbox = AceGUI:Create("MultiLineEditBox")
+		editbox:SetLabel("Look at the strat/insert strat:")
+		editbox:SetText(compText)
+		editbox:SetWidth(400)
+		editbox:SetCallback("OnEnterPressed", function(widget, event, text)
+			print("modified text upcoming: ")
+			print(text)
+			self.db.profile.comps[concatPlayer][concatEnemy] = text
+		end)
+		frame:AddChild(editbox)
 	else
 		print("Frame is not visible!")
 
 		if not frame then
 			print("Creating frame!")
-
-			local concatPlayer = ConcatComp(playerComp)
-			local concatEnemy = ConcatComp(enemyComp)
-			local compText = self.db.profile.comps[concatPlayer][concatEnemy]
-			print("comp text upcoming: ")
-			print(compText)
-
+			
 			frame = AceGUI:Create("Frame")
 			frame:SetTitle("Strategist")
 			frame:SetCallback("OnClose", function(widget)
