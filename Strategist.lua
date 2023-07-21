@@ -84,6 +84,7 @@ function Strategist:EnqueuePlayers()
 end
 
 function Strategist:INSPECT_READY(event, guid)
+	local addedInfo = false
 	-- Check if the inspected GUID is in the pendingInspections table
 	if pendingInspections[guid] then
 		local playerUnitId = pendingInspections[guid]
@@ -93,6 +94,7 @@ function Strategist:INSPECT_READY(event, guid)
 
 		local class, spec = Strategist:GetClassAndSpec(playerUnitId)
 		if class and spec and not Strategist:IsInTable(processedUnitIDs, playerUnitId) then
+			addedInfo = true
 			table.insert(processedUnitIDs, playerUnitId)
 			-- Do something with the class and spec information (e.g., store it, print it, etc.)
 			print(playerUnitId .. ": " .. class .. " " .. spec)
@@ -102,7 +104,9 @@ function Strategist:INSPECT_READY(event, guid)
 		end
 	end
 
-	Strategist:CheckIfGUIReady()
+	if addedInfo then
+		Strategist:CheckIfGUIReady()
+	end
 end
 
 function Strategist:PLAYER_ENTERING_WORLD()
@@ -186,6 +190,7 @@ function Strategist:IsInTable(table, item)
 end
 
 function Strategist:ARENA_PREP_OPPONENT_SPECIALIZATIONS()
+	local addedInfo = false
 	print("Prepping opponent information")
 	for i = 1, GetNumArenaOpponentSpecs and GetNumArenaOpponentSpecs() or 0 do
 		local unit = "arena" .. i
@@ -195,6 +200,7 @@ function Strategist:ARENA_PREP_OPPONENT_SPECIALIZATIONS()
 			print("here")
 			local iD, specName, description, icon, background, role, class = GetSpecializationInfoByID(specID)
 			if class and specName and not Strategist:IsInTable(processedUnitIDs, unit) then
+				addedInfo = true
 				table.insert(processedUnitIDs, unit)
 				print(class .. specName)
 				table.insert(enemyComp, class .. specName)
@@ -202,7 +208,9 @@ function Strategist:ARENA_PREP_OPPONENT_SPECIALIZATIONS()
 		end
 	end
 
-	Strategist:CheckIfGUIReady()
+	if addedInfo then
+		Strategist:CheckIfGUIReady()
+	end
 end
 
 function Strategist:CheckIfGUIReady()
