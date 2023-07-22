@@ -70,7 +70,7 @@ function Strategist:ImportProfile(data)
 
 	-- if (data.version ~= 1) then return self:ImportError(L["Invalid version"]) end
 	local realData = self:Decode(data)
-	local profile = "Imported " .. format(date())
+	local profile = realData.name
 
 	self.db.profiles[profile] = realData.profile
 	self.db:SetProfile(profile)
@@ -112,6 +112,7 @@ function Strategist:GetProfileData()
 	local LibDeflate = LibStub:GetLibrary("LibDeflate")
 	local data = {
 		profile = self.db.profile,
+		name = UnitName("player"),
 		version = 1
 	}
 	local serialized = self:Serialize(data)
