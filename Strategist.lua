@@ -1,6 +1,7 @@
 local Strategist = LibStub("AceAddon-3.0"):NewAddon("Strategist", "AceConsole-3.0", "AceEvent-3.0", "AceSerializer-3.0")
 local AC = LibStub("AceConfig-3.0")
 local ACD = LibStub("AceConfigDialog-3.0")
+local ACR = LibStub("AceConfigRegistry-3.0")
 local AceGUI = LibStub("AceGUI-3.0")
 local frame
 local editbox
@@ -157,6 +158,7 @@ function Strategist:CreateEditBoxForProfile(text)
 		importEditBox:SetHeight(400)
 		importEditBox:SetCallback("OnEnterPressed", function(widget, event, data) 
 			self:ImportProfile(data)
+			ACR:NotifyChange("Strategist_options")
 		end)
 		profileFrame:AddChild(importEditBox)
 	end
