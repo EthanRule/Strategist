@@ -48,13 +48,16 @@ local options = {
 
 function Strategist:OnInitialize()
 	self.db = LibStub("AceDB-3.0"):New("StrategistDB", defaults, true)
+	self.db.RegisterCallback(self, "OnProfileChanged", "GetMainTable");
+    -- self.db.RegisterCallback(self, "OnProfileCopied", "RefreshConfig");
+    self.db.RegisterCallback(self, "OnProfileReset", "GetMainTable");
 	Strategist:GetMainTable()
 	AC:RegisterOptionsTable("Strategist_options", options)
 	self.optionsFrame = ACD:AddToBlizOptions("Strategist_options", "Strategist")
 
 	local profiles = LibStub("AceDBOptions-3.0"):GetOptionsTable(self.db)
 	AC:RegisterOptionsTable("Strategist_Profiles", profiles)
-	ACD:AddToBlizOptions("Strategist_Profiles", "Profiles", "Strategist")
+	self.profilesFrame = ACD:AddToBlizOptions("Strategist_Profiles", "Profiles", "Strategist")
 
 	self:RegisterChatCommand("strat", "SlashCommand")
 	self:RegisterChatCommand("strategist", "SlashCommand")
@@ -68,7 +71,7 @@ function Strategist:ImportProfile(data)
 
 	-- if (data.version ~= 1) then return self:ImportError(L["Invalid version"]) end
 
-	local profile = "Imported (%s)" .. format(date())
+	local profile = "Imported " .. format(date())
 
 	self.db.profiles[profile] = data.profile
 	self.db:SetProfile(profile)
