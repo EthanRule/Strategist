@@ -50,7 +50,6 @@ local options = {
 function Strategist:OnInitialize()
 	self.db = LibStub("AceDB-3.0"):New("StrategistDB", defaults, true)
 	self.db.RegisterCallback(self, "OnProfileChanged", "GetMainTable");
-    -- self.db.RegisterCallback(self, "OnProfileCopied", "RefreshConfig");
     self.db.RegisterCallback(self, "OnProfileReset", "GetMainTable");
 	AC:RegisterOptionsTable("Strategist_options", options)
 	self.optionsFrame = ACD:AddToBlizOptions("Strategist_options", "Strategist")
@@ -65,12 +64,19 @@ function Strategist:OnInitialize()
 end
 
 function Strategist:ImportProfile(data)
+	-- https://github.com/jordonwow/omnibar/blob/master/OmniBar.lua 
 	if not data then
 		return
 	end
 
-	-- if (data.version ~= 1) then return self:ImportError(L["Invalid version"]) end
 	local realData = self:Decode(data)
+
+	if not realData then
+		return
+	end
+
+	if (realData.version ~= 1) then return end
+
 	local profile = realData.name
 
 	self.db.profiles[profile] = realData.profile
@@ -83,13 +89,14 @@ function Strategist:ImportProfile(data)
 end
 
 function Strategist:Decode(encoded)
+	-- https://github.com/jordonwow/omnibar/blob/master/OmniBar.lua
 	local LibDeflate = LibStub:GetLibrary("LibDeflate")
 	local decoded = LibDeflate:DecodeForPrint(encoded)
-	if (not decoded) then return self:ImportError("DecodeForPrint") end
+	if (not decoded) then return end
 	local decompressed = LibDeflate:DecompressZlib(decoded)
-	if (not decompressed) then return self:ImportError("DecompressZlib") end
+	if (not decompressed) then return end
 	local success, deserialized = self:Deserialize(decompressed)
-	if (not success) then return self:ImportError("Deserialize") end
+	if (not success) then return end
 	return deserialized
 end
 
@@ -97,19 +104,8 @@ function Strategist:InitiateImport()
 	self:CreateEditBoxForProfile(nil)
 end
 
--- function Strategist:ImportError(message)
--- 	if (not message) or self.import.editBox.editBox:GetNumLetters() == 0 then
--- 		self.import.statustext:SetTextColor(1, 0.82, 0)
--- 		self.import:SetStatusText(L["Paste a code to import an OmniBar profile."])
--- 	else
--- 		self.import.statustext:SetTextColor(1, 0, 0)
--- 		self.import:SetStatusText(L["Import failed (%s)"]:format(message))
--- 	end
-
--- 	self.import.button:SetDisabled(true)
--- end
-
 function Strategist:GetProfileData()
+	-- https://github.com/jordonwow/omnibar/blob/master/OmniBar.lua 
 	local LibDeflate = LibStub:GetLibrary("LibDeflate")
 	local data = {
 		profile = self.db.profile,
