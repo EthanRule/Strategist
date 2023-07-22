@@ -51,7 +51,6 @@ function Strategist:OnInitialize()
 	self.db.RegisterCallback(self, "OnProfileChanged", "GetMainTable");
     -- self.db.RegisterCallback(self, "OnProfileCopied", "RefreshConfig");
     self.db.RegisterCallback(self, "OnProfileReset", "GetMainTable");
-	Strategist:GetMainTable()
 	AC:RegisterOptionsTable("Strategist_options", options)
 	self.optionsFrame = ACD:AddToBlizOptions("Strategist_options", "Strategist")
 
@@ -75,16 +74,15 @@ function Strategist:ImportProfile(data)
 
 	self.db.profiles[profile] = data.profile
 	self.db:SetProfile(profile)
-
 	self:OnEnable()
+	
 	LibStub("AceConfigRegistry-3.0"):NotifyChange("Strategist")
 
 	return true
 end
 
-function Strategist:InitiateImport(data)
+function Strategist:InitiateImport()
 	self:CreateEditBoxForProfile(nil)
-	self:ImportProfile(data)
 end
 
 -- function Strategist:ImportError(message)
@@ -145,6 +143,9 @@ function Strategist:CreateEditBoxForProfile(text)
 		importEditBox:SetFocus()
 		importEditBox:SetWidth(400)
 		importEditBox:SetHeight(400)
+		importEditBox:SetCallback("OnEnterPressed", function(widget, event, data) 
+			self:ImportProfile(data)
+		end)
 		profileFrame:AddChild(importEditBox)
 	end
 end
@@ -202,6 +203,7 @@ end
 
 function Strategist:OnEnable()
 	self:RegisterEvent("PLAYER_ENTERING_WORLD")
+	self:GetMainTable()
 end
 
 function Strategist:EnqueuePlayers()
