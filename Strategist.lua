@@ -1,4 +1,4 @@
-local Strategist = LibStub("AceAddon-3.0"):NewAddon("Strategist", "AceConsole-3.0", "AceEvent-3.0")
+local Strategist = LibStub("AceAddon-3.0"):NewAddon("Strategist", "AceConsole-3.0", "AceEvent-3.0", "AceSerializer-3.0")
 local AC = LibStub("AceConfig-3.0")
 local ACD = LibStub("AceConfigDialog-3.0")
 local AceGUI = LibStub("AceGUI-3.0")
@@ -29,7 +29,20 @@ local options = {
 			type = "toggle",
 			set = "SetPopUp",
 			get = "GetPopUp",
+			order = 1,
 		},
+		import = {
+			name = "Import",
+			desc = "Import a profile",
+			type = "execute",
+			func = "InitiateImport",
+		},
+		export = {
+			name = "Export",
+			desc = "Export a profile",
+			type = "execute",
+			func = "ExportProfile",
+		}
 	},
 }
 
@@ -46,6 +59,91 @@ function Strategist:OnInitialize()
 	self:RegisterChatCommand("strat", "SlashCommand")
 	self:RegisterChatCommand("strategist", "SlashCommand")
 	--Split("MageFrost-MonkWindwalker-PriestDiscipline")
+end
+
+function Strategist:ImportProfile(data)
+	if not data then
+		return
+	end
+
+	-- if (data.version ~= 1) then return self:ImportError(L["Invalid version"]) end
+
+	local profile = "Imported (%s)" .. format(date())
+
+	self.db.profiles[profile] = data.profile
+	self.db:SetProfile(profile)
+
+	self:OnEnable()
+	LibStub("AceConfigRegistry-3.0"):NotifyChange("Strategist")
+
+	return true
+end
+
+function Strategist:InitiateImport(data)
+	self:CreateEditBoxForProfile(nil)
+	self:ImportProfile(data)
+end
+
+-- function Strategist:ImportError(message)
+-- 	if (not message) or self.import.editBox.editBox:GetNumLetters() == 0 then
+-- 		self.import.statustext:SetTextColor(1, 0.82, 0)
+-- 		self.import:SetStatusText(L["Paste a code to import an OmniBar profile."])
+-- 	else
+-- 		self.import.statustext:SetTextColor(1, 0, 0)
+-- 		self.import:SetStatusText(L["Import failed (%s)"]:format(message))
+-- 	end
+
+-- 	self.import.button:SetDisabled(true)
+-- end
+
+function Strategist:GetProfileData()
+	local LibDeflate = LibStub:GetLibrary("LibDeflate")
+	local data = {
+		profile = self.db.profile,
+		version = 1
+	}
+	local serialized = self:Serialize(data)
+	if (not serialized) then return end
+	local compressed = LibDeflate:CompressZlib(serialized)
+	if (not compressed) then return end
+	return LibDeflate:EncodeForPrint(compressed)
+end
+
+function Strategist:ExportProfile()
+	local data = self:GetProfileData()
+	self:CreateEditBoxForProfile(data)
+end
+
+function Strategist:CreateEditBoxForProfile(text)
+	local profileFrame = AceGUI:Create("Frame")
+	profileFrame:SetCallback("OnClose", function(widget)
+		profileFrame:Release()
+	end)
+	profileFrame:SetLayout("Fill")
+	profileFrame:SetWidth(600)
+	profileFrame:SetHeight(600)
+
+	if text then
+		-- We are exporting
+		profileFrame:SetTitle("Strategist Export")
+		local exportEditBox = AceGUI:Create("MultiLineEditBox")
+		exportEditBox:SetText(text)
+		exportEditBox:HighlightText()
+		exportEditBox:SetFocus()
+		exportEditBox:SetWidth(400)
+		exportEditBox:SetHeight(400)
+		exportEditBox.editBox.autoComplete = false
+		profileFrame:AddChild(exportEditBox)
+	else 
+		-- We are importing
+		profileFrame:SetTitle("Strategist Import")
+		local importEditBox = AceGUI:Create("MultiLineEditBox")
+		importEditBox:SetText("")
+		importEditBox:SetFocus()
+		importEditBox:SetWidth(400)
+		importEditBox:SetHeight(400)
+		profileFrame:AddChild(importEditBox)
+	end
 end
 
 function Strategist:GetMainTable()
@@ -68,6 +166,10 @@ function Strategist:GetMainTable()
 						self.db.profile.comps[comp][enemyComp] = text
 					end
 					curEnemyComp["get"] = function()
+						if not self.db.profile.comps[comp] then
+							self.db.profile.comps[comp] = { [enemyComp] = strat }
+						end
+
 						return self.db.profile.comps[comp][enemyComp]
 					end
 					enemyComps[enemyComp] = curEnemyComp
