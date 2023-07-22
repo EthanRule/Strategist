@@ -69,16 +69,27 @@ function Strategist:ImportProfile(data)
 	end
 
 	-- if (data.version ~= 1) then return self:ImportError(L["Invalid version"]) end
-
+	local realData = self:Decode(data)
 	local profile = "Imported " .. format(date())
 
-	self.db.profiles[profile] = data.profile
+	self.db.profiles[profile] = realData.profile
 	self.db:SetProfile(profile)
 	self:OnEnable()
-	
+
 	LibStub("AceConfigRegistry-3.0"):NotifyChange("Strategist")
 
 	return true
+end
+
+function Strategist:Decode(encoded)
+	local LibDeflate = LibStub:GetLibrary("LibDeflate")
+	local decoded = LibDeflate:DecodeForPrint(encoded)
+	if (not decoded) then return self:ImportError("DecodeForPrint") end
+	local decompressed = LibDeflate:DecompressZlib(decoded)
+	if (not decompressed) then return self:ImportError("DecompressZlib") end
+	local success, deserialized = self:Deserialize(decompressed)
+	if (not success) then return self:ImportError("Deserialize") end
+	return deserialized
 end
 
 function Strategist:InitiateImport()
@@ -152,6 +163,11 @@ end
 
 function Strategist:GetMainTable()
 	local tableOfComps = self.db.profile.comps
+
+	if type(tableOfComps) ~= "table" then
+		print("Not a table")
+		return
+	end
 
 	for comp, enemyTable in pairs(tableOfComps) do
 		if comp then
