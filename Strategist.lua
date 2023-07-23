@@ -570,16 +570,19 @@ function Strategist:CreateEditBox(compText, concatPlayer, concatEnemy)
 end
 
 function Strategist:GetIcons(playerComp, enemyComp)
-	local iconGroup = AceGUI:Create("InlineGroup")
-	iconGroup:SetLayout("Fill")
+	local playerGroup = AceGUI:Create("SimpleGroup")
+	playerGroup:SetLayout("Flow")
+    playerGroup:SetFullWidth(true) 
 	local playerTable = Split(playerComp)
 	local enemyTable = Split(enemyComp)
 
 	for _, classAndSpec in ipairs(playerTable) do
-		self:UpdateSpecializationIcon(classAndSpec, iconGroup)
+		self:UpdateSpecializationIcon(classAndSpec, playerGroup)
 	end
+
 	for _, classAndSpec in ipairs(enemyTable) do
-		self:UpdateSpecializationIcon(classAndSpec, iconGroup)
+		self:UpdateSpecializationIcon(classAndSpec, playerGroup)
 	end
-	frame:AddChild(iconGroup)
+
+	frame:AddChild(playerGroup)
 end
