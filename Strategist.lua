@@ -10,6 +10,8 @@ local pendingInspections = {}
 local playerComp = {}
 local processedUnitIDs = {}
 local enemyComp = {}
+local specializationIcons = {}
+
 
 local defaults = {
 	profile = {
@@ -50,9 +52,10 @@ local options = {
 function Strategist:OnInitialize()
 	self.db = LibStub("AceDB-3.0"):New("StrategistDB", defaults, true)
 	self.db.RegisterCallback(self, "OnProfileChanged", "GetMainTable");
-    self.db.RegisterCallback(self, "OnProfileReset", "GetMainTable");
+	self.db.RegisterCallback(self, "OnProfileReset", "GetMainTable");
 	AC:RegisterOptionsTable("Strategist_options", options)
 	self.optionsFrame = ACD:AddToBlizOptions("Strategist_options", "Strategist")
+	self:PopulateSpecializationIcons()
 
 	local profiles = LibStub("AceDBOptions-3.0"):GetOptionsTable(self.db)
 	AC:RegisterOptionsTable("Strategist_Profiles", profiles)
@@ -60,11 +63,59 @@ function Strategist:OnInitialize()
 
 	self:RegisterChatCommand("strat", "SlashCommand")
 	self:RegisterChatCommand("strategist", "SlashCommand")
-	--Split("MageFrost-MonkWindwalker-PriestDiscipline")
+end
+
+function Strategist:UpdateSpecializationIcon(classAndSpec, iconGroup)
+	local specFrame = AceGUI:Create("Icon")
+	specFrame:SetImageSize(30, 30)
+	specFrame:SetImage(specializationIcons[classAndSpec])
+
+	iconGroup:AddChild(specFrame)
+end
+
+function Strategist:GetMainTable()
+	local tableOfComps = self.db.profile.comps
+
+	if type(tableOfComps) ~= "table" then
+		print("Not a table")
+		return
+	end
+
+	for comp, enemyTable in pairs(tableOfComps) do
+		if comp then
+			local curComp = {}
+			local enemyComps = {}
+			curComp["name"] = comp
+			curComp["type"] = "group"
+
+			if enemyTable and type(enemyTable) == "table" then
+				for enemyComp, strat in pairs(enemyTable) do
+					local curEnemyComp = {}
+					curEnemyComp["name"] = enemyComp
+					curEnemyComp["type"] = "input"
+					curEnemyComp["multiline"] = true
+					curEnemyComp["set"] = function(info, text)
+						self.db.profile.comps[comp][enemyComp] = text
+					end
+					curEnemyComp["get"] = function()
+						if not self.db.profile.comps[comp] then
+							self.db.profile.comps[comp] = { [enemyComp] = strat }
+						end
+
+						return self.db.profile.comps[comp][enemyComp]
+					end
+					enemyComps[enemyComp] = curEnemyComp
+				end
+
+				curComp["args"] = enemyComps
+				options.args[comp] = curComp
+			end
+		end
+	end
 end
 
 function Strategist:ImportProfile(data)
-	-- https://github.com/jordonwow/omnibar/blob/master/OmniBar.lua 
+	-- https://github.com/jordonwow/omnibar/blob/master/OmniBar.lua
 	if not data then
 		return
 	end
@@ -105,7 +156,7 @@ function Strategist:InitiateImport()
 end
 
 function Strategist:GetProfileData()
-	-- https://github.com/jordonwow/omnibar/blob/master/OmniBar.lua 
+	-- https://github.com/jordonwow/omnibar/blob/master/OmniBar.lua
 	local LibDeflate = LibStub:GetLibrary("LibDeflate")
 	local data = {
 		profile = self.db.profile,
@@ -122,6 +173,21 @@ end
 function Strategist:ExportProfile()
 	local data = self:GetProfileData()
 	self:CreateEditBoxForProfile(data)
+end
+
+function Strategist:PopulateSpecializationIcons()
+	for classID = 1, GetNumClasses() do
+		local class, className = GetClassInfo(classID)
+
+		for specIndex = 1, GetNumSpecializationsForClassID(classID) do
+			local _, specName, _, specIcon = GetSpecializationInfoForClassID(classID, specIndex)
+			specializationIcons[class .. specName] = specIcon
+		end
+	end
+
+	-- for className, specIcon in pairs(specializationIcons) do
+	-- 	-- print(className .. ":" .. specIcon)
+	-- end
 end
 
 function Strategist:CreateEditBoxForProfile(text)
@@ -144,7 +210,7 @@ function Strategist:CreateEditBoxForProfile(text)
 		exportEditBox:SetHeight(400)
 		exportEditBox.editBox.autoComplete = false
 		profileFrame:AddChild(exportEditBox)
-	else 
+	else
 		-- We are importing
 		profileFrame:SetTitle("Strategist Import")
 		local importEditBox = AceGUI:Create("MultiLineEditBox")
@@ -152,7 +218,7 @@ function Strategist:CreateEditBoxForProfile(text)
 		importEditBox:SetFocus()
 		importEditBox:SetWidth(400)
 		importEditBox:SetHeight(400)
-		importEditBox:SetCallback("OnEnterPressed", function(widget, event, data) 
+		importEditBox:SetCallback("OnEnterPressed", function(widget, event, data)
 			self:ImportProfile(data)
 			ACR:NotifyChange("Strategist_options")
 		end)
@@ -160,51 +226,13 @@ function Strategist:CreateEditBoxForProfile(text)
 	end
 end
 
-function Strategist:GetMainTable()
-	local tableOfComps = self.db.profile.comps
-
-	if type(tableOfComps) ~= "table" then
-		print("Not a table")
-		return
-	end
-
-	for comp, enemyTable in pairs(tableOfComps) do
-		if comp then
-			local curComp = {}
-			local enemyComps = {}
-			curComp["name"] = comp
-			curComp["type"] = "group"
-			
-			if enemyTable and type(enemyTable) == "table" then
-				for enemyComp, strat in pairs(enemyTable) do
-					local curEnemyComp = {}
-					curEnemyComp["name"] = enemyComp
-					curEnemyComp["type"] = "input"
-					curEnemyComp["multiline"] = true
-					curEnemyComp["set"] = function(info, text) 
-						self.db.profile.comps[comp][enemyComp] = text
-					end
-					curEnemyComp["get"] = function()
-						if not self.db.profile.comps[comp] then
-							self.db.profile.comps[comp] = { [enemyComp] = strat }
-						end
-
-						return self.db.profile.comps[comp][enemyComp]
-					end
-					enemyComps[enemyComp] = curEnemyComp
-				end
-
-				curComp["args"] = enemyComps
-				options.args[comp] = curComp
-			end
-		end
-	end
-end
-
 function Split(comp)
+	local classes = {}
 	for classAndSpec in string.gmatch(comp, "([^%-]+)") do
+		table.insert(classes, classAndSpec)
 		print(classAndSpec)
 	end
+	return classes
 end
 
 function Strategist:SetPopUp(info)
@@ -430,12 +458,12 @@ function Strategist:LeftArena()
 	self:UnregisterEvent("INSPECT_READY")
 
 	-- Automatically close the frame when the person leaves the arena
-    -- if frame then
-    --     print("Releasing frame")
-    --     frame:Release()
-    --     frame = nil -- Set the frame to nil after releasing
+	-- if frame then
+	--     print("Releasing frame")
+	--     frame:Release()
+	--     frame = nil -- Set the frame to nil after releasing
 	-- 	editbox = nil
-    -- end
+	-- end
 
 	print("playerComp")
 	Strategist:PrintTable(playerComp)
@@ -488,7 +516,7 @@ function Strategist:GUI()
 	if not self.db.profile.popUp then
 		return
 	end
-	
+
 	print("Entered new zone!")
 
 	local concatPlayer = ConcatComp(playerComp)
@@ -508,9 +536,9 @@ function Strategist:GUI()
 			frame = nil
 			editbox = nil
 		end)
-		frame:SetLayout("Fill")
+		frame:SetLayout("Flow")
 		frame:SetWidth(400)
-		frame:SetHeight(200)
+		frame:SetHeight(300)
 
 		Strategist:CreateEditBox(compText, concatPlayer, concatEnemy)
 	else
@@ -524,13 +552,13 @@ end
 
 function Strategist:CreateEditBox(compText, concatPlayer, concatEnemy)
 	if editbox then
-        print("Releasing editbox")
-        editbox:Release()
-        editbox = nil
-    end
-
+		print("Releasing editbox")
+		editbox:Release()
+		editbox = nil
+	end
+	Strategist:GetIcons(concatPlayer, concatEnemy)
 	editbox = AceGUI:Create("MultiLineEditBox")
-	editbox:SetLabel(concatPlayer .. "VS" .. concatEnemy)
+	editbox:SetLabel("")
 	editbox:SetText(compText)
 	editbox:SetWidth(400)
 	editbox:SetCallback("OnEnterPressed", function(widget, event, text)
@@ -539,4 +567,19 @@ function Strategist:CreateEditBox(compText, concatPlayer, concatEnemy)
 		self.db.profile.comps[concatPlayer][concatEnemy] = text
 	end)
 	frame:AddChild(editbox)
+end
+
+function Strategist:GetIcons(playerComp, enemyComp)
+	local iconGroup = AceGUI:Create("InlineGroup")
+	iconGroup:SetLayout("Fill")
+	local playerTable = Split(playerComp)
+	local enemyTable = Split(enemyComp)
+
+	for _, classAndSpec in ipairs(playerTable) do
+		self:UpdateSpecializationIcon(classAndSpec, iconGroup)
+	end
+	for _, classAndSpec in ipairs(enemyTable) do
+		self:UpdateSpecializationIcon(classAndSpec, iconGroup)
+	end
+	frame:AddChild(iconGroup)
 end
