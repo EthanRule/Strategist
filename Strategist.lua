@@ -61,8 +61,20 @@ function Strategist:OnInitialize()
 	AC:RegisterOptionsTable("Strategist_Profiles", profiles)
 	self.profilesFrame = ACD:AddToBlizOptions("Strategist_Profiles", "Profiles", "Strategist")
 
+	-- Open Addon in Blizzard Menu
 	self:RegisterChatCommand("strat", "SlashCommand")
 	self:RegisterChatCommand("strategist", "SlashCommand")
+
+	-- Test Strategist Arena Window
+	self:RegisterChatCommand("teststrat", "StrategistWindowTest")
+	self:RegisterChatCommand("teststrategist", "StrategistWindowTest")
+end
+
+function Strategist:StrategistWindowTest()
+	-- testDATA
+	local testPlayerComp = "DruidBalance-MonkWindwalker-PaladinHoly"
+	local testEnemyComp = "WarriorArms-MageFrost-DruidRestoration"
+	Strategist:GUI(true, testPlayerComp, testEnemyComp)
 end
 
 function Strategist:UpdateSpecializationIcon(classAndSpec, iconGroup)
@@ -184,10 +196,6 @@ function Strategist:PopulateSpecializationIcons()
 			specializationIcons[class .. specName] = specIcon
 		end
 	end
-
-	-- for className, specIcon in pairs(specializationIcons) do
-	-- 	-- print(className .. ":" .. specIcon)
-	-- end
 end
 
 function Strategist:CreateEditBoxForProfile(text)
@@ -512,16 +520,27 @@ function Strategist:SetCurComp(playerComp, enemyComp)
 	end
 end
 
-function Strategist:GUI()
+function Strategist:GUI(test, testPlayerComp, testEnemyComp)
 	if not self.db.profile.popUp then
 		return
 	end
 
 	print("Entered new zone!")
+	local concatPlayer
+	local concatEnemy
+	local compText
 
-	local concatPlayer = ConcatComp(playerComp)
-	local concatEnemy = ConcatComp(enemyComp)
-	local compText = self.db.profile.comps[concatPlayer][concatEnemy]
+	-- Check if this is a "/teststrat" window
+	if test == false then
+		concatPlayer = ConcatComp(playerComp)
+		concatEnemy = ConcatComp(enemyComp)
+		compText = self.db.profile.comps[concatPlayer][concatEnemy]
+	elseif test == true then
+		concatPlayer = testPlayerComp
+		concatEnemy = testEnemyComp
+		compText = "Test window!"
+	end
+
 	print("comp text upcoming: ")
 	print(compText)
 
@@ -572,7 +591,7 @@ end
 function Strategist:GetIcons(playerComp, enemyComp)
 	local playerGroup = AceGUI:Create("SimpleGroup")
 	playerGroup:SetLayout("Flow")
-    playerGroup:SetFullWidth(true) 
+	playerGroup:SetFullWidth(true)
 	local playerTable = Split(playerComp)
 	local enemyTable = Split(enemyComp)
 
