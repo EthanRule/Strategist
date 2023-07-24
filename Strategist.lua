@@ -381,7 +381,14 @@ end
 function Strategist:GetSpecIcons(playerComp, enemyComp)
 	local playerGroup = AceGUI:Create("SimpleGroup")
 	playerGroup:SetLayout("Flow")
-	playerGroup:SetFullWidth(true)
+	playerGroup:SetWidth(100)
+	local enemyGroup = AceGUI:Create("SimpleGroup")
+	enemyGroup:SetLayout("Flow")
+	enemyGroup:SetWidth(100)
+	local spacer = AceGUI:Create("SimpleGroup")
+	spacer:SetLayout("Flow")
+	spacer:SetWidth(150)
+
 	local playerTable = Split(playerComp)
 	local enemyTable = Split(enemyComp)
 
@@ -390,17 +397,25 @@ function Strategist:GetSpecIcons(playerComp, enemyComp)
 	end
 
 	for _, classAndSpec in ipairs(enemyTable) do
-		self:SetSpecIcons(classAndSpec, playerGroup)
+		self:SetSpecIcons(classAndSpec, enemyGroup)
 	end
 
-	frame:AddChild(playerGroup)
+	local compGroup = AceGUI:Create("SimpleGroup")
+	compGroup:SetLayout("Flow")
+	compGroup:SetWidth(400)
+
+	compGroup:AddChild(playerGroup)
+	compGroup:AddChild(spacer)
+	compGroup:AddChild(enemyGroup)
+	frame:AddChild(compGroup)
 end
 
-function Strategist:SetSpecIcons(classAndSpec, iconGroup)
-	local specFrame = AceGUI:Create("Icon")
-	specFrame:SetImageSize(30, 30)
-	specFrame:SetImage(specializationIcons[classAndSpec])
-	iconGroup:AddChild(specFrame)
+function Strategist:SetSpecIcons(classAndSpec, group)
+	local composition = AceGUI:Create("Icon")
+	composition:SetImageSize(30, 30)
+	composition:SetImage(specializationIcons[classAndSpec])
+	composition:SetRelativeWidth(0.33)
+	group:AddChild(composition)
 end
 
 function Split(comp)
