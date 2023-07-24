@@ -382,9 +382,11 @@ function Strategist:GetSpecIcons(playerComp, enemyComp)
 	local playerGroup = AceGUI:Create("SimpleGroup")
 	playerGroup:SetLayout("Flow")
 	playerGroup:SetWidth(100)
+
 	local enemyGroup = AceGUI:Create("SimpleGroup")
 	enemyGroup:SetLayout("Flow")
 	enemyGroup:SetWidth(100)
+
 	local spacer = AceGUI:Create("SimpleGroup")
 	spacer:SetLayout("Flow")
 	spacer:SetWidth(150)
@@ -407,6 +409,7 @@ function Strategist:GetSpecIcons(playerComp, enemyComp)
 	compGroup:AddChild(playerGroup)
 	compGroup:AddChild(spacer)
 	compGroup:AddChild(enemyGroup)
+
 	frame:AddChild(compGroup)
 end
 
