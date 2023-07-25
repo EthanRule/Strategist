@@ -355,9 +355,6 @@ function Strategist:GUI(test, testPlayerComp, testEnemyComp)
 		frame:SetLayout("Flow")
 		frame:SetWidth(400)
 		frame:SetHeight(300)
-
-
-
 		Strategist:CreateEditBox(compText, concatPlayer, concatEnemy)
 		isWindowOpen = true
 	else
@@ -367,7 +364,6 @@ function Strategist:GUI(test, testPlayerComp, testEnemyComp)
 			end
 		end
 	end
-
 	if not button then
 		local button = AceGUI:Create("Button")
 		button:SetText("Tell")
