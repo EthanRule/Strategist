@@ -11,6 +11,7 @@ local playerComp = {}
 local processedUnitIDs = {}
 local enemyComp = {}
 local specializationIcons = {}
+local isWindowOpen = false
 
 
 local defaults = {
@@ -349,15 +350,19 @@ function Strategist:GUI(test, testPlayerComp, testEnemyComp)
 			frame:Release()
 			frame = nil
 			editbox = nil
+			isWindowOpen = false
 		end)
 		frame:SetLayout("Flow")
 		frame:SetWidth(400)
 		frame:SetHeight(300)
 
 		Strategist:CreateEditBox(compText, concatPlayer, concatEnemy)
+		isWindowOpen = true
 	else
-		if frame:IsShown() then
-			Strategist:CreateEditBox(compText, concatPlayer, concatEnemy)
+		if not isWindowOpen then
+			if frame:IsShown() then
+				Strategist:CreateEditBox(compText, concatPlayer, concatEnemy)
+			end
 		end
 	end
 end
