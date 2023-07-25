@@ -356,6 +356,8 @@ function Strategist:GUI(test, testPlayerComp, testEnemyComp)
 		frame:SetWidth(400)
 		frame:SetHeight(300)
 
+
+
 		Strategist:CreateEditBox(compText, concatPlayer, concatEnemy)
 		isWindowOpen = true
 	else
@@ -364,6 +366,20 @@ function Strategist:GUI(test, testPlayerComp, testEnemyComp)
 				Strategist:CreateEditBox(compText, concatPlayer, concatEnemy)
 			end
 		end
+	end
+
+	if not button then
+		local button = AceGUI:Create("Button")
+		button:SetText("Tell")
+		button:SetWidth(100)
+		button:SetCallback("OnClick", function()
+			local message = editbox:GetText()
+			if message then
+				SendChatMessage(message, "SAY")
+			end
+		end)
+
+		frame:AddChild(button)
 	end
 end
 
