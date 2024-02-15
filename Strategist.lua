@@ -346,16 +346,17 @@ function Strategist:GUI(test, testPlayerComp, testEnemyComp)
 	if not frame then
 		frame = AceGUI:Create("Frame")
 		frame:SetTitle("Strategist")
+		frame:SetStatusText("Never forget. Write it down")
 		frame:SetCallback("OnClose", function(widget)
 			frame:Release()
 			frame = nil
 			editbox = nil
 			isWindowOpen = false
 		end)
+		Strategist:CreateEditBox(compText, concatPlayer, concatEnemy)
 		frame:SetLayout("Flow")
 		frame:SetWidth(400)
-		frame:SetHeight(300)
-		Strategist:CreateEditBox(compText, concatPlayer, concatEnemy)
+		frame:SetHeight(250)
 		isWindowOpen = true
 	else
 		if not isWindowOpen then
@@ -399,14 +400,17 @@ function Strategist:GetSpecIcons(playerComp, enemyComp)
 	local playerGroup = AceGUI:Create("SimpleGroup")
 	playerGroup:SetLayout("Flow")
 	playerGroup:SetWidth(100)
+	playerGroup:SetHeight(30)
 
 	local enemyGroup = AceGUI:Create("SimpleGroup")
 	enemyGroup:SetLayout("Flow")
 	enemyGroup:SetWidth(100)
+	enemyGroup:SetHeight(30)
 
 	local spacer = AceGUI:Create("SimpleGroup")
 	spacer:SetLayout("Flow")
 	spacer:SetWidth(150)
+	spacer:SetHeight(30)
 
 	local playerTable = Split(playerComp)
 	local enemyTable = Split(enemyComp)
@@ -422,6 +426,7 @@ function Strategist:GetSpecIcons(playerComp, enemyComp)
 	local compGroup = AceGUI:Create("SimpleGroup")
 	compGroup:SetLayout("Flow")
 	compGroup:SetWidth(400)
+	compGroup:SetHeight(30)
 
 	compGroup:AddChild(playerGroup)
 	compGroup:AddChild(spacer)
